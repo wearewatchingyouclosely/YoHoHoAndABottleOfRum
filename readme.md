@@ -63,7 +63,7 @@ Replace `username` with your Ubuntu username and `YOUR_SERVER_IP` with the IP fr
 ### Step 5: Install This Media Server
 ```bash
 # Clone the repository
-git clone [REPO URL]
+git clone https://github.com/wearewatchingyouclosely/YoHoHoAndABottleOfRum
 
 # Navigate to the directory
 cd YoHoHoAndABottleOfRum
@@ -140,5 +140,6 @@ Access your services at:
 I am not your mother, your sysadmin, or your spouse. I am not a lawyer, accountant, engineer, or any other sort of person who posses professional credentials.  My distribution of this information implies no warranty, responsibility (real or imagined) or other sort of accountability for this content. 
 
 You buy a black and white TV and you turn it on -  you have access to everything that is available to watch. The world switched to color screens, then bigger screens, then flatter screens, and this continued on. But someone, somewhere decided that not enough money was being made. So they figured out how to get us to pay for TV and they called it 'cable' and 'satellite' and put all the good shows on it. But then we had to work so much to pay for all the channels that we started missing the shows when they came on! So they started selling DVDs of the shows, but those were taking up too much space, so they decided to put TV on the Internet! And this was great for while, until some shows started only coming out on the Internet! And now it costs more to watch all the shows on the Internet than the shows on the TV!
+
 
 it's clearly not a m@n!f3st0 it's just a bash script!!!!!!!
