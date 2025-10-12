@@ -46,7 +46,6 @@ SERVICES[8]="qbittorrent"
 SERVICES[9]="unpackerr"
 SERVICES[10]="prometheus"
 SERVICES[11]="dashboard"
-SERVICES[12]="grafana"
 SERVICES[G]="gui"
 
 SERVICE_DESCRIPTIONS[1]="📁 Samba File Share"
@@ -60,7 +59,6 @@ SERVICE_DESCRIPTIONS[8]="�🌊 qBittorrent (Torrents)"
 SERVICE_DESCRIPTIONS[9]="📦 Unpackerr (Archives)"
 SERVICE_DESCRIPTIONS[10]="📊 Prometheus (Monitoring)"
 SERVICE_DESCRIPTIONS[11]="🎨 Web Dashboard (Mobile-Friendly)"
-SERVICE_DESCRIPTIONS[12]="📈 Grafana (Analytics)"
 SERVICE_DESCRIPTIONS[G]="🖥️  Ubuntu Desktop GUI"
 
 # Utility functions
@@ -155,7 +153,6 @@ show_service_menu() {
     echo -e "${GREEN}${BOLD}📊 MONITORING & ANALYTICS${NC}" >&3
     echo -e "  ${WHITE}[10]${NC} ${SERVICE_DESCRIPTIONS[10]} ${GREEN}- Recommended${NC}" >&3
     echo -e "  ${WHITE}[11]${NC} ${SERVICE_DESCRIPTIONS[11]} ${GREEN}- Recommended${NC}" >&3
-    echo -e "  ${WHITE}[12]${NC} ${SERVICE_DESCRIPTIONS[12]} ${GREEN}- Recommended${NC}" >&3
     echo ""
     
     # Optional System Enhancement
@@ -165,13 +162,13 @@ show_service_menu() {
     
     # Shortcuts
     echo -e "${CYAN}${BOLD}⚡ QUICK SHORTCUTS${NC}" >&3
-    echo -e "  ${BOLD}${YELLOW}[A]${NC}   Install ALL recommended services (1-12)" >&3
-    echo -e "  ${BOLD}${YELLOW}[AG]${NC}  Install ALL services + GUI (1-12 + G)" >&3
+    echo -e "  ${BOLD}${YELLOW}[A]${NC}   Install ALL recommended services (1-11)" >&3
+    echo -e "  ${BOLD}${YELLOW}[AG]${NC}  Install ALL services + GUI (1-11 + G)" >&3
     echo ""
     
     echo -e "${BLUE}${BOLD}� SELECTION EXAMPLES${NC}" >&3
     echo -e "  ${WHITE}Single:${NC}     3                    ${GRAY}(Install Radarr only)${NC}" >&3
-    echo -e "  ${WHITE}Multiple:${NC}   10 11 12             ${GRAY}(Prometheus + Dashboard + Grafana)${NC}" >&3
+    echo -e "  ${WHITE}Multiple:${NC}   3 10 11              ${GRAY}(Radarr + Prometheus + Dashboard)${NC}" >&3
     echo -e "  ${WHITE}Comma:${NC}      1,2,6                ${GRAY}(Samba + NordVPN + Plex)${NC}" >&3
     echo -e "  ${WHITE}All:${NC}        A                    ${GRAY}(Everything recommended)${NC}" >&3
     echo ""

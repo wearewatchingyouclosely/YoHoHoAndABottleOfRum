@@ -110,6 +110,131 @@
             }
         }
 
+        /* Mobile Cycling View for screens < 500px */
+        .mobile-cycling-view {
+            display: none;
+        }
+
+        @media (max-width: 500px) {
+            /* Hide regular dashboard */
+            .container > .grid,
+            .ascii-banner,
+            .quote-section,
+            .server-info {
+                display: none !important;
+            }
+
+            /* Adjust refresh button for mobile */
+            .refresh-btn {
+                top: 10px;
+                right: 10px;
+                font-size: 1.2em;
+            }
+
+            /* Show mobile cycling view */
+            .mobile-cycling-view {
+                display: block;
+                text-align: center;
+                padding: 20px 10px;
+            }
+
+            .mobile-title {
+                font-size: 1.5em;
+                font-weight: bold;
+                color: #00ff88;
+                text-shadow: 0 0 10px #00ff88;
+                margin-bottom: 30px;
+                animation: pulse 2s ease-in-out infinite;
+            }
+
+            .mobile-service-container {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 15px;
+                padding: 30px 20px;
+                border: 2px solid rgba(0, 255, 136, 0.3);
+                min-height: 200px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: all 0.5s ease;
+                cursor: pointer;
+            }
+
+            .mobile-service-container:hover {
+                background: rgba(0, 255, 136, 0.15);
+                transform: scale(1.05);
+            }
+
+            .mobile-service-icon {
+                font-size: 3em;
+                margin-bottom: 15px;
+                animation: bounce 2s ease-in-out infinite;
+            }
+
+            .mobile-service-name {
+                font-size: 1.3em;
+                font-weight: bold;
+                margin-bottom: 10px;
+                color: #fff;
+            }
+
+            .mobile-service-status {
+                font-size: 1em;
+                padding: 5px 15px;
+                border-radius: 20px;
+                margin-bottom: 10px;
+            }
+
+            .mobile-service-status.online {
+                background: rgba(0, 255, 0, 0.2);
+                color: #00ff00;
+                border: 1px solid #00ff00;
+            }
+
+            .mobile-service-status.offline {
+                background: rgba(255, 0, 0, 0.2);
+                color: #ff4444;
+                border: 1px solid #ff4444;
+            }
+
+            .mobile-service-url {
+                font-size: 0.9em;
+                color: #ccc;
+                word-break: break-all;
+            }
+
+            .mobile-progress {
+                margin-top: 20px;
+                display: flex;
+                justify-content: center;
+                gap: 5px;
+            }
+
+            .mobile-progress-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.3);
+                transition: all 0.3s ease;
+            }
+
+            .mobile-progress-dot.active {
+                background: #00ff88;
+                transform: scale(1.5);
+            }
+
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.7; }
+            }
+
+            @keyframes bounce {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-10px); }
+            }
+        }
+
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -365,6 +490,20 @@
 <body>
     <button class="refresh-btn" onclick="refreshData()" title="Refresh Data">🔄</button>
 
+    <!-- Mobile Cycling View (< 500px) -->
+    <div class="mobile-cycling-view">
+        <div class="mobile-title">🏴‍☠️ YoHoHoAndABottleOfRum</div>
+        <div class="mobile-service-container" id="mobile-current-service">
+            <div class="mobile-service-icon" id="mobile-service-icon">📱</div>
+            <div class="mobile-service-name" id="mobile-service-name">Loading...</div>
+            <div class="mobile-service-status" id="mobile-service-status">●</div>
+            <div class="mobile-service-url" id="mobile-service-url">Initializing...</div>
+        </div>
+        <div class="mobile-progress" id="mobile-progress">
+            <!-- Progress dots will be added dynamically -->
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <div class="ascii-banner">═══════════════════════════════════════════════════════════════════
@@ -489,6 +628,139 @@
 
     <script>
         let isLoading = false;
+        let mobileServices = [];
+        let currentMobileIndex = 0;
+        let mobileInterval = null;
+
+        function initializeMobileCycling() {
+            // Check if we're in mobile view
+            if (window.innerWidth > 500) return;
+            
+            if (mobileInterval) {
+                clearInterval(mobileInterval);
+            }
+            
+            mobileInterval = setInterval(cycleMobileService, 5000);
+        }
+
+        function updateMobileServices(data) {
+            mobileServices = [];
+            
+            // Add media services
+            Object.entries(data.services).forEach(([key, service]) => {
+                mobileServices.push({
+                    icon: service.icon,
+                    name: service.name,
+                    status: service.status,
+                    url: service.url,
+                    type: 'media'
+                });
+            });
+            
+            // Add system services
+            Object.entries(data.system_services).forEach(([key, service]) => {
+                mobileServices.push({
+                    icon: key === 'unpackerr' ? '📦' : '📁',
+                    name: service.name,
+                    status: service.status,
+                    url: service.description,
+                    type: 'system',
+                    smbPath: service.smb_path
+                });
+            });
+            
+            // Add VPN status
+            const vpn = data.nordvpn;
+            mobileServices.push({
+                icon: '🛡️',
+                name: 'NordVPN',
+                status: vpn.status === 'connected' ? 'connected' : vpn.status.replace('_', ' '),
+                url: vpn.status === 'connected' ? `${vpn.country}/${vpn.city}` : 'Not connected',
+                type: 'vpn'
+            });
+            
+            updateMobileProgressDots();
+            showCurrentMobileService();
+        }
+
+        function updateMobileProgressDots() {
+            const progressContainer = document.getElementById('mobile-progress');
+            progressContainer.innerHTML = '';
+            
+            mobileServices.forEach((_, index) => {
+                const dot = document.createElement('div');
+                dot.className = 'mobile-progress-dot';
+                if (index === currentMobileIndex) {
+                    dot.classList.add('active');
+                }
+                progressContainer.appendChild(dot);
+            });
+        }
+
+        function showCurrentMobileService() {
+            if (mobileServices.length === 0) return;
+            
+            const service = mobileServices[currentMobileIndex];
+            
+            document.getElementById('mobile-service-icon').textContent = service.icon;
+            document.getElementById('mobile-service-name').textContent = service.name;
+            document.getElementById('mobile-service-url').textContent = service.url;
+            
+            const statusElement = document.getElementById('mobile-service-status');
+            statusElement.textContent = service.status;
+            
+            // Set status styling
+            statusElement.className = 'mobile-service-status';
+            if (service.status === 'running' || service.status === 'connected' || service.status === 'online') {
+                statusElement.classList.add('online');
+            } else {
+                statusElement.classList.add('offline');
+            }
+            
+            // Add click handler
+            const container = document.getElementById('mobile-current-service');
+            container.onclick = () => {
+                if (service.type === 'media' && service.status === 'online') {
+                    window.open(service.url, '_blank');
+                } else if (service.type === 'system' && service.name === 'Samba File Share' && service.status === 'running') {
+                    // Handle Samba click (same logic as desktop)
+                    const smbPath = service.smbPath;
+                    try {
+                        window.open(`file://${smbPath.replace(/\\\\/g, '//')}/`, '_blank');
+                    } catch (e) {
+                        if (navigator.clipboard) {
+                            navigator.clipboard.writeText(smbPath).then(() => {
+                                alert(`📋 File share path copied!\n\n${smbPath}\n\nPaste in File Explorer address bar.`);
+                            }).catch(() => {
+                                alert(`📁 Open in File Explorer:\n\n${smbPath}`);
+                            });
+                        } else {
+                            alert(`📁 Open in File Explorer:\n\n${smbPath}`);
+                        }
+                    }
+                }
+            };
+            
+            // Update progress dots
+            updateMobileProgressDots();
+        }
+
+        function cycleMobileService() {
+            if (mobileServices.length === 0) return;
+            
+            currentMobileIndex = (currentMobileIndex + 1) % mobileServices.length;
+            showCurrentMobileService();
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 500) {
+                initializeMobileCycling();
+            } else if (mobileInterval) {
+                clearInterval(mobileInterval);
+                mobileInterval = null;
+            }
+        });
 
         function refreshData() {
             if (isLoading) return;
@@ -628,6 +900,9 @@
                 
                 systemServicesContainer.appendChild(serviceElement);
             });
+            
+            // Update mobile cycling view
+            updateMobileServices(data);
         }
 
         // Auto-refresh every 30 seconds
@@ -635,6 +910,11 @@
 
         // Initial load
         refreshData();
+        
+        // Initialize mobile cycling if needed
+        if (window.innerWidth <= 500) {
+            initializeMobileCycling();
+        }
     </script>
 </body>
 </html>

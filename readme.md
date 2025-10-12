@@ -12,7 +12,6 @@ we're using linux because it's too hard to pirate windows and learning windows s
 2. Create bootable USB drive (usbimager.exe)
 3. Install Ubuntu Server on your target machine
 4. **Important**: Create a user account during installation (remember username/password)
-
 ### Step 2: Connect to Network
 **If using WiFi:**
 ```bash
@@ -23,6 +22,15 @@ sudo nmcli device wifi connect "YOUR_WIFI_NAME" password "YOUR_PASSWORD"
 ip addr show
 hostname -I
 curl icanhazip.com
+
+# Install OpenSSH so you can SSH in
+sudo apt update
+sudo apt install -y openssh-server
+sudo systemctl enable --now ssh
+
+# Disable UFW once connection is validated 
+sudo ufw disable
+
 ```
 
 **If using Ethernet:** Should connect automatically, if not, open a ticket with an IT professional of your choice
@@ -32,6 +40,14 @@ curl icanhazip.com
 ip addr show
 hostname -I
 curl icanhazip.com
+
+# Install OpenSSH
+sudo apt update
+sudo apt install -y openssh-server
+sudo systemctl enable --now ssh
+
+# Disable UFW once connection is validated (optional)
+sudo ufw disable
 echo 'you'll copy paste anything won't you?'
 ```
 

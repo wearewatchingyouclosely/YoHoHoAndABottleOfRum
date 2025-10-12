@@ -90,11 +90,10 @@ echo -e "${YELLOW}  → Setting up directories${NC}"
 sudo mkdir -p /opt/dashboard
 sudo cp -r "$DASHBOARD_DIR"/* /opt/dashboard/
 
-# Copy MOTD quotes and ASCII banner for dashboard
-echo -e "${YELLOW}  → Copying MOTD resources for dashboard${NC}"
+# Copy MOTD quotes file for dashboard
+echo -e "${YELLOW}  → Copying MOTD quotes for dashboard${NC}"
 sudo mkdir -p /opt/dashboard/MOTD
 sudo cp "$SCRIPT_DIR/../MOTD/motd-quotes.txt" /opt/dashboard/MOTD/ 2>/dev/null || echo "Quotes file not found, using fallback"
-sudo cp "$DASHBOARD_DIR/ascii_banner.txt" /opt/dashboard/ 2>/dev/null || echo "Banner file not found, using fallback"
 
 sudo chown -R dashboard:dashboard /opt/dashboard
 
