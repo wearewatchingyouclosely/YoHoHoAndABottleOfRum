@@ -160,7 +160,11 @@ class ServerDashboard:
         try:
             result = subprocess.run(['nordvpn', 'status'], capture_output=True, text=True, timeout=10)
             status_text = result.stdout if result.returncode == 0 else ''
-            if 'Status: Connected' in status_text:
+            # Defensive: Normalize line endings and case
+            status_text = status_text.replace('\r', '').replace('\n', '\n').strip()
+            # Parse status line robustly
+            status_line = next((line for line in status_text.split('\n') if line.lower().startswith('status:')), '').lower()
+            if 'connected' in status_line:
                 country = self._extract_nordvpn_field(status_text, 'Country:')
                 city = self._extract_nordvpn_field(status_text, 'City:')
                 technology = self._extract_nordvpn_field(status_text, 'Current technology:')
@@ -172,13 +176,19 @@ class ServerDashboard:
                     'technology': technology,
                     'server': server
                 }
-            elif 'Status: Disconnected' in status_text:
+            elif 'disconnected' in status_line:
                 return {'status': 'disconnected'}
-            else:
-                # Anything else is treated as not logged in (MOTD logic)
+            elif 'connecting' in status_line:
+                return {'status': 'connecting'}
+            elif 'not logged in' in status_line:
                 return {'status': 'not_logged_in'}
-        except Exception:
-            return {'status': 'not_installed'}
+            else:
+                # Fallback: try to detect not_logged_in or error
+                if 'not logged in' in status_text.lower():
+                    return {'status': 'not_logged_in'}
+                return {'status': 'error', 'message': status_text.strip()}
+        except Exception as e:
+            return {'status': 'not_installed', 'message': str(e)}
 
     def _extract_nordvpn_field(self, text, field):
         # Helper to extract field value from nordvpn status output

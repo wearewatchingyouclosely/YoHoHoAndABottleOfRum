@@ -947,18 +947,31 @@
             // SMB path for Mac
             const macPath = `smb://${serverIp}/sambashare`;
 
-            pathsDiv.innerHTML = `<b>Windows:</b> <span style='color:#fff;'>${uncPath}</span><br><b>Mac:</b> <span style='color:#fff;'>${macPath}</span>`;
+            // Display Windows path with single backslashes
+            const displayWinPath = uncPath.replace(/\\/g, '\\');
+            pathsDiv.innerHTML = `<b>Windows:</b> <span style='color:#fff;'>${displayWinPath}</span><br><b>Mac:</b> <span style='color:#fff;'>${macPath}</span>`;
 
             winBtn.onclick = () => {
-                // Create a Windows shortcut (.url) file for download
-                const shortcutContent = `[InternetShortcut]\nURL=${uncPath}\n`;
-                const blob = new Blob([shortcutContent], { type: 'text/plain' });
+                // Create a PowerShell script that generates a .lnk shortcut to the Samba share using the real server IP
+                const psScript = `
+$desktop = [Environment]::GetFolderPath('Desktop')
+$targetPath = '${uncPath.replace(/\\/g, '\\\\')}'
+$shortcutPath = Join-Path $desktop 'SambaShare.lnk'
+$wsh = New-Object -ComObject WScript.Shell
+$shortcut = $wsh.CreateShortcut($shortcutPath)
+$shortcut.TargetPath = $targetPath
+$shortcut.WorkingDirectory = $targetPath
+$shortcut.Save()
+Write-Host 'Shortcut created on Desktop: ' $shortcutPath
+`;
+                const blob = new Blob([psScript], { type: 'text/plain' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = 'SambaShare.url';
+                link.download = 'CreateSambaShortcut.ps1';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                alert('A PowerShell script has been downloaded.\n\nTo create the shortcut, right-click the script and select \'Run with PowerShell\'.');
             };
             macBtn.onclick = () => {
                 // Open in Mac Finder

@@ -88,6 +88,7 @@ sudo useradd --system --shell /bin/false --home /opt/dashboard dashboard 2>/dev/
 # Create directories
 echo -e "${YELLOW}  → Setting up directories${NC}"
 sudo mkdir -p /opt/dashboard
+sudo rm -rf /opt/dashboard/*
 sudo cp -r "$DASHBOARD_DIR"/* /opt/dashboard/
 
 # Copy MOTD quotes file for dashboard
