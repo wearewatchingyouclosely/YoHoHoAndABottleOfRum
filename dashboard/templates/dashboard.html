@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YoHoHoAndABottleOfRum - Media Server Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d1b69 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            background-size: 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .header .subtitle {
+            font-size: 1.1em;
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+
+        .server-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .ascii-banner {
+            font-family: 'Courier New', monospace;
+            white-space: pre-line;
+            font-size: 0.6em;
+            line-height: 1.1;
+            text-align: center;
+            color: #00ff88;
+            text-shadow: 0 0 5px #00ff88;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0, 20, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid #00ff88;
+            overflow-x: auto;
+        }
+
+        .quote-section {
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px;
+            font-style: italic;
+            color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid #ffd700;
+        }
+
+        @media (max-width: 768px) {
+            .ascii-banner {
+                font-size: 0.4em;
+                padding: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .ascii-banner {
+                font-size: 0.35em;
+                padding: 8px;
+            }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            background-size: 300%;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .service {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .service:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .service[data-service="samba"]:hover {
+            background: rgba(0, 255, 136, 0.15);
+            border-color: rgba(0, 255, 136, 0.3);
+        }
+
+        .service-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .service-icon {
+            font-size: 1.5em;
+        }
+
+        .service-details h3 {
+            font-size: 1em;
+            margin-bottom: 3px;
+        }
+
+        .service-url {
+            font-size: 0.8em;
+            opacity: 0.7;
+            font-family: monospace;
+        }
+
+        .status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status.online {
+            background: linear-gradient(45deg, #00b894, #00cec9);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+        }
+
+        .status.offline {
+            background: linear-gradient(45deg, #e17055, #fd79a8);
+            color: white;
+            box-shadow: 0 4px 15px rgba(225, 112, 85, 0.3);
+        }
+
+        .status.error {
+            background: linear-gradient(45deg, #fdcb6e, #f39c12);
+            color: white;
+            box-shadow: 0 4px 15px rgba(253, 203, 110, 0.3);
+        }
+
+        .system-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 5px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .vpn-status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .vpn-connected {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+        }
+
+        .vpn-disconnected {
+            background: linear-gradient(135deg, #fdcb6e, #f39c12);
+            color: white;
+        }
+
+        .vpn-error {
+            background: linear-gradient(135deg, #e17055, #fd79a8);
+            color: white;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.1) rotate(180deg);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .loading {
+            opacity: 0.6;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            opacity: 0.6;
+            font-size: 0.9em;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .server-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .service {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .system-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .system-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="refresh-btn" onclick="refreshData()" title="Refresh Data">🔄</button>
+
+    <div class="container">
+        <div class="header">
+            <div class="ascii-banner">═══════════════════════════════════════════════════════════════════
+                     M                          
+                    dM                          
+                    MMr                         
+                   4MMML                  .     
+                   MMMMM.                xf     
+   .              "MMMMM               .MM-     
+    Mh..          +MMMMMM            .MMMM      
+    .MMM.         .MMMMML.          MMMMMh      
+     )MMMh.        MMMMMM         MMMMMMM       
+      3MMMMx.     'MMMMMMf      xnMMMMMM"       
+      "*MMMMM      MMMMMM.     nMMMMMMP"        
+        *MMMMMx    "MMMMM\    .MMMMMMM=         
+         *MMMMMh   "MMMMM"   JMMMMMMP           
+           MMMMMM   3MMMM.  dMMMMMM            .
+            MMMMMM  "MMMM  .MMMMM(        .nnMP"
+=..          *MMMMx  MMM"  dMMMM"    .nnMMMMM*  
+  "MMn...     'MMMMr 'MM   MMM"   .nMMMMMMM*"   
+   "4MMMMnn..   *MMM  MM  MMP"  .dMMMMMMM""     
+     ^MMMMMMMMx.  *ML "M .M*  .MMMMMM**"        
+        *PMMMMMMhn. *x > M  .MMMM**""           
+           ""**MMMMhx/.h/ .=*"                  
+                    .3P"%....                   
+                  nP"     "*MMnx               
+            STONED LOSER MEDIA SERVER
+        YoHoHoAndABottleOfRum - WAWYC
+
+  form over function, there may be info above here
+═══════════════════════════════════════════════════════════════════</div>
+            
+            <div class="quote-section">
+                <strong>"Quote of the Day:"</strong> <span id="daily-quote">Loading wisdom...</span>
+            </div>
+            
+            <div class="server-info">
+                <div class="info-item">
+                    <span>🖥️</span>
+                    <span>Server IP: <span id="server-ip">Loading...</span></span>
+                </div>
+                <div class="info-item">
+                    <span>⏰</span>
+                    <span>Last Update: <span id="timestamp">Loading...</span></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Media Services Card -->
+            <div class="card">
+                <div class="card-title">
+                    🎭 Media Services
+                </div>
+                <div id="media-services">
+                    <!-- Services will be loaded here -->
+                </div>
+            </div>
+
+            <!-- System Information Card -->
+            <div class="card">
+                <div class="card-title">
+                    📊 System Information
+                </div>
+                <div class="system-stats">
+                    <div class="stat">
+                        <div class="stat-value" id="uptime">-</div>
+                        <div class="stat-label">Uptime</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="load-avg">-</div>
+                        <div class="stat-label">Load Average</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="memory-usage">-</div>
+                        <div class="stat-label">Memory Usage</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="disk-usage">-</div>
+                        <div class="stat-label">Disk Usage</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VPN & System Services Card -->
+            <div class="card">
+                <div class="card-title">
+                    🛡️ VPN & System Services
+                </div>
+                
+                <div id="vpn-status">
+                    <!-- VPN status will be loaded here -->
+                </div>
+
+                <div id="system-services">
+                    <!-- System services will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Resources Card -->
+            <div class="card">
+                <div class="card-title">
+                    📚 Configuration Resources
+                </div>
+                <div class="service" onclick="window.open('https://trash-guides.info/', '_blank')">
+                    <div class="service-info">
+                        <div class="service-icon">📚</div>
+                        <div class="service-details">
+                            <h3>TRaSH Guides</h3>
+                            <div class="service-url">https://trash-guides.info/</div>
+                        </div>
+                    </div>
+                    <div class="status online">Essential</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            form over function, there may be info above here
+        </div>
+    </div>
+
+    <script>
+        let isLoading = false;
+
+        function refreshData() {
+            if (isLoading) return;
+            
+            isLoading = true;
+            document.body.classList.add('loading');
+            
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    updateDashboard(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                })
+                .finally(() => {
+                    isLoading = false;
+                    document.body.classList.remove('loading');
+                });
+        }
+
+        function updateDashboard(data) {
+            // Update basic info
+            document.getElementById('server-ip').textContent = data.server_ip;
+            document.getElementById('timestamp').textContent = data.timestamp;
+            
+            // Update daily quote
+            const quoteElement = document.getElementById('daily-quote');
+            if (quoteElement && data.daily_quote) {
+                quoteElement.textContent = data.daily_quote;
+            }
+
+            // Update system stats
+            document.getElementById('uptime').textContent = data.system_info.uptime;
+            document.getElementById('load-avg').textContent = data.system_info.load_avg[0];
+            document.getElementById('memory-usage').textContent = data.system_info.memory.percent + '%';
+            document.getElementById('disk-usage').textContent = data.disk_usage.percent;
+
+            // Update media services
+            const mediaServicesContainer = document.getElementById('media-services');
+            mediaServicesContainer.innerHTML = '';
+            
+            Object.entries(data.services).forEach(([key, service]) => {
+                const serviceElement = document.createElement('div');
+                serviceElement.className = 'service';
+                serviceElement.onclick = () => window.open(service.url, '_blank');
+                
+                serviceElement.innerHTML = `
+                    <div class="service-info">
+                        <div class="service-icon">${service.icon}</div>
+                        <div class="service-details">
+                            <h3>${service.name}</h3>
+                            <div class="service-url">${service.url}</div>
+                        </div>
+                    </div>
+                    <div class="status ${service.status}">${service.status}</div>
+                `;
+                
+                mediaServicesContainer.appendChild(serviceElement);
+            });
+
+            // Update VPN status
+            const vpnContainer = document.getElementById('vpn-status');
+            const vpn = data.nordvpn;
+            
+            if (vpn.status === 'connected') {
+                vpnContainer.innerHTML = `
+                    <div class="vpn-status vpn-connected">
+                        <strong>🛡️ NordVPN: Connected</strong><br>
+                        <small>${vpn.country}/${vpn.city} (${vpn.technology})</small><br>
+                        <small>Server: ${vpn.server}</small>
+                    </div>
+                `;
+            } else if (vpn.status === 'disconnected') {
+                vpnContainer.innerHTML = `
+                    <div class="vpn-status vpn-disconnected">
+                        <strong>🛡️ NordVPN: Disconnected</strong><br>
+                        <small>Use 'nordvpn connect' to connect</small>
+                    </div>
+                `;
+            } else {
+                vpnContainer.innerHTML = `
+                    <div class="vpn-status vpn-error">
+                        <strong>🛡️ NordVPN: ${vpn.status.replace('_', ' ').toUpperCase()}</strong>
+                    </div>
+                `;
+            }
+
+            // Update system services
+            const systemServicesContainer = document.getElementById('system-services');
+            systemServicesContainer.innerHTML = '';
+            
+            Object.entries(data.system_services).forEach(([key, service]) => {
+                const serviceElement = document.createElement('div');
+                serviceElement.className = 'service';
+                serviceElement.setAttribute('data-service', key);
+                
+                // Add click handler for Samba to open Windows file share
+                if (key === 'samba' && service.status === 'running') {
+                    serviceElement.style.cursor = 'pointer';
+                    serviceElement.onclick = () => {
+                        // Try multiple methods to open Windows file share
+                        const smbPath = service.smb_path;
+                        
+                        // Method 1: Try file:// protocol
+                        try {
+                            window.open(`file://${smbPath.replace(/\\\\/g, '//')}/`, '_blank');
+                        } catch (e) {
+                            // Method 2: Copy UNC path to clipboard and show instruction
+                            if (navigator.clipboard) {
+                                navigator.clipboard.writeText(smbPath).then(() => {
+                                    alert(`📋 File share path copied to clipboard!\n\nPaste this in Windows File Explorer address bar:\n${smbPath}\n\nOr press Win+R and paste to open directly.`);
+                                }).catch(() => {
+                                    // Method 3: Show the path for manual copy
+                                    const message = `📁 Open this path in Windows File Explorer:\n\n${smbPath}\n\n💡 Tip: Press Win+R, paste the path, and press Enter`;
+                                    alert(message);
+                                });
+                            } else {
+                                alert(`📁 Open this path in Windows File Explorer:\n\n${smbPath}\n\n💡 Tip: Press Win+R, paste the path, and press Enter`);
+                            }
+                        }
+                    };
+                }
+                
+                const statusClass = service.status === 'running' ? 'online' : 'offline';
+                
+                serviceElement.innerHTML = `
+                    <div class="service-info">
+                        <div class="service-icon">${key === 'unpackerr' ? '📦' : '📁'}</div>
+                        <div class="service-details">
+                            <h3>${service.name}${key === 'samba' && service.status === 'running' ? ' 🔗' : ''}</h3>
+                            <div class="service-url">${service.description}</div>
+                        </div>
+                    </div>
+                    <div class="status ${statusClass}">${service.status}</div>
+                `;
+                
+                systemServicesContainer.appendChild(serviceElement);
+            });
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(refreshData, 30000);
+
+        // Initial load
+        refreshData();
+    </script>
+</body>
+</html>

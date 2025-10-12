@@ -44,6 +44,9 @@ SERVICES[6]="plex"
 SERVICES[7]="overseerr"
 SERVICES[8]="qbittorrent"
 SERVICES[9]="unpackerr"
+SERVICES[10]="prometheus"
+SERVICES[11]="dashboard"
+SERVICES[12]="grafana"
 SERVICES[G]="gui"
 
 SERVICE_DESCRIPTIONS[1]="📁 Samba File Share"
@@ -55,6 +58,9 @@ SERVICE_DESCRIPTIONS[6]="� Plex Media Server"
 SERVICE_DESCRIPTIONS[7]="📋 Overseerr (Requests)"
 SERVICE_DESCRIPTIONS[8]="�🌊 qBittorrent (Torrents)"
 SERVICE_DESCRIPTIONS[9]="📦 Unpackerr (Archives)"
+SERVICE_DESCRIPTIONS[10]="📊 Prometheus (Monitoring)"
+SERVICE_DESCRIPTIONS[11]="🎨 Web Dashboard (Mobile-Friendly)"
+SERVICE_DESCRIPTIONS[12]="📈 Grafana (Analytics)"
 SERVICE_DESCRIPTIONS[G]="🖥️  Ubuntu Desktop GUI"
 
 # Utility functions
@@ -145,18 +151,32 @@ show_service_menu() {
     echo -e "  ${WHITE}[9]${NC} ${SERVICE_DESCRIPTIONS[9]} ${GREEN}- Recommended${NC}" >&3
     echo ""
     
+    # Monitoring & Analytics
+    echo -e "${GREEN}${BOLD}📊 MONITORING & ANALYTICS${NC}" >&3
+    echo -e "  ${WHITE}[10]${NC} ${SERVICE_DESCRIPTIONS[10]} ${GREEN}- Recommended${NC}" >&3
+    echo -e "  ${WHITE}[11]${NC} ${SERVICE_DESCRIPTIONS[11]} ${GREEN}- Recommended${NC}" >&3
+    echo -e "  ${WHITE}[12]${NC} ${SERVICE_DESCRIPTIONS[12]} ${GREEN}- Recommended${NC}" >&3
+    echo ""
+    
     # Optional System Enhancement
     echo -e "${PURPLE}${BOLD}🖥️ SYSTEM ENHANCEMENT${NC}" >&3
-    echo -e "  ${WHITE}[G]${NC} ${SERVICE_DESCRIPTIONS[G]} ${PURPLE}- Optional${NC}" >&3
+    echo -e "  ${WHITE}[G]${NC} ${SERVICE_DESCRIPTIONS[G]} ${PURPLE}- FUTURE${NC}" >&3
     echo ""
     
     # Shortcuts
     echo -e "${CYAN}${BOLD}⚡ QUICK SHORTCUTS${NC}" >&3
-    echo -e "  ${BOLD}${YELLOW}[A]${NC}   Install ALL recommended services (1-9)" >&3
-    echo -e "  ${BOLD}${YELLOW}[AG]${NC}  Install ALL services + GUI (1-9 + G)" >&3
+    echo -e "  ${BOLD}${YELLOW}[A]${NC}   Install ALL recommended services (1-12)" >&3
+    echo -e "  ${BOLD}${YELLOW}[AG]${NC}  Install ALL services + GUI (1-12 + G)" >&3
     echo ""
     
-    echo -e "${WHITE}${BOLD}💫 Enter your selection${NC} ${GREEN}(e.g., 1,2,3 or A or AG)${NC}: " >&3
+    echo -e "${BLUE}${BOLD}� SELECTION EXAMPLES${NC}" >&3
+    echo -e "  ${WHITE}Single:${NC}     3                    ${GRAY}(Install Radarr only)${NC}" >&3
+    echo -e "  ${WHITE}Multiple:${NC}   10 11 12             ${GRAY}(Prometheus + Dashboard + Grafana)${NC}" >&3
+    echo -e "  ${WHITE}Comma:${NC}      1,2,6                ${GRAY}(Samba + NordVPN + Plex)${NC}" >&3
+    echo -e "  ${WHITE}All:${NC}        A                    ${GRAY}(Everything recommended)${NC}" >&3
+    echo ""
+    
+    echo -e "${WHITE}${BOLD}💫 Enter your selection${NC}: " >&3
 }
 
 parse_selection() {
@@ -166,14 +186,20 @@ parse_selection() {
     # Handle shortcuts
     case "${input^^}" in
         "A")
-            selections=(1 2 3 4 5 6 7 8 9)
+            selections=(1 2 3 4 5 6 7 8 9 10 11)
             ;;
         "AG")
-            selections=(1 2 3 4 5 6 7 8 9 G)
+            selections=(1 2 3 4 5 6 7 8 9 10 11 G)
             ;;
         *)
-            # Parse comma-separated input
-            IFS=',' read -ra selections <<< "${input// /}"
+            # Parse multiple selection formats: comma-separated OR space-separated
+            if [[ "$input" == *","* ]]; then
+                # Comma-separated: "1,2,3" or "1, 2, 3"
+                IFS=',' read -ra selections <<< "${input// /}"
+            else
+                # Space-separated: "1 2 3" or single selection: "1"
+                read -ra selections <<< "$input"
+            fi
             ;;
     esac
     
@@ -556,6 +582,46 @@ install_unpackerr() {
     fi
 }
 
+install_prometheus() {
+    log "Installing Prometheus monitoring system"
+    if [[ -f "$INSTALLERS_DIR/prometheus_install.sh" ]]; then
+        chmod +x "$INSTALLERS_DIR/prometheus_install.sh"
+        if "$INSTALLERS_DIR/prometheus_install.sh"; then
+            INSTALL_RESULTS[prometheus]="success"
+            log "Prometheus installation completed successfully"
+        else
+            INSTALL_RESULTS[prometheus]="failed"
+            INSTALL_ERRORS[prometheus]="Installation script failed"
+            echo -e "${RED}❌ Prometheus installation failed - continuing with other services${NC}" >&3
+            log "Prometheus installation failed but continuing"
+        fi
+    else
+        INSTALL_RESULTS[prometheus]="missing"
+        INSTALL_ERRORS[prometheus]="Installer script not found"
+        echo -e "${YELLOW}⚠️ prometheus_install.sh not found - service not installed${NC}" >&3
+    fi
+}
+
+install_dashboard() {
+    log "Installing Web Dashboard"
+    if [[ -f "$INSTALLERS_DIR/dashboard_install.sh" ]]; then
+        chmod +x "$INSTALLERS_DIR/dashboard_install.sh"
+        if "$INSTALLERS_DIR/dashboard_install.sh"; then
+            INSTALL_RESULTS[dashboard]="success"
+            log "Dashboard installation completed successfully"
+        else
+            INSTALL_RESULTS[dashboard]="failed"
+            INSTALL_ERRORS[dashboard]="Installation script failed"
+            echo -e "${RED}❌ Dashboard installation failed - continuing with other services${NC}" >&3
+            log "Dashboard installation failed but continuing"
+        fi
+    else
+        INSTALL_RESULTS[dashboard]="missing"
+        INSTALL_ERRORS[dashboard]="Installer script not found"
+        echo -e "${YELLOW}⚠️ dashboard_install.sh not found - service not installed${NC}" >&3
+    fi
+}
+
 install_gui() {
     log "Installing Ubuntu Desktop GUI"
     if [[ -f "$INSTALLERS_DIR/gui_install.sh" ]]; then
@@ -809,6 +875,8 @@ main() {
     [[ "${INSTALL_FLAGS[plex]}" == "true" ]] && install_plex
     [[ "${INSTALL_FLAGS[overseerr]}" == "true" ]] && install_overseerr
     [[ "${INSTALL_FLAGS[unpackerr]}" == "true" ]] && install_unpackerr
+    [[ "${INSTALL_FLAGS[prometheus]}" == "true" ]] && install_prometheus
+    [[ "${INSTALL_FLAGS[dashboard]}" == "true" ]] && install_dashboard
     [[ "${INSTALL_FLAGS[gui]}" == "true" ]] && install_gui
     
     # qBittorrent installed last as per best practices

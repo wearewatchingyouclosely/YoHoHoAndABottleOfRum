@@ -80,6 +80,8 @@ sudo bash server_setup.sh
 - **qBittorrent** - Download client
 - **Overseerr** - Request management
 - **Unpackerr** - Automatic archive extraction
+- **Prometheus** - System and service monitoring
+- **Web Dashboard** - Mobile-friendly web interface
 - **Samba** - Network file sharing
 - **NordVPN** - Optional VPN client
 
@@ -95,9 +97,11 @@ sudo reboot
 
 
 Access your services at:
+- **📱 Web Dashboard:** `http://YOUR_SERVER_IP:3000` *(Mobile-friendly overview)*
 - **Plex:** `http://YOUR_SERVER_IP:32400/web`
 - **Radarr:** `http://YOUR_SERVER_IP:7878`
 - **Sonarr:** `http://YOUR_SERVER_IP:8989`
+- **Prometheus:** `http://YOUR_SERVER_IP:9090`
 - **And more...**
 
 ## Configuration Help

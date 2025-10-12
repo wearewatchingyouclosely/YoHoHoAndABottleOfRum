@@ -113,6 +113,14 @@ generate_motd() {
     qbit_status=$(check_service_status "http://$server_ip:8080")
     echo -e "  $qbit_status ${WHITE}qBittorrent:${NC}         http://$server_ip:8080"
     
+    # Prometheus
+    prometheus_status=$(check_service_status "http://$server_ip:9090")
+    echo -e "  $prometheus_status ${WHITE}Prometheus (Monitoring):${NC} http://$server_ip:9090"
+    
+    # Dashboard
+    dashboard_status=$(check_service_status "http://$server_ip:3000")
+    echo -e "  $dashboard_status ${WHITE}Web Dashboard (Mobile):${NC}  http://$server_ip:3000"
+    
     # NordVPN status (dynamic check)
     echo ""
     echo -e "${YELLOW}${BOLD}VPN & Other Services:${NC}"
