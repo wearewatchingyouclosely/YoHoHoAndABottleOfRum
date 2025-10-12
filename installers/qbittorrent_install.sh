@@ -206,7 +206,7 @@ get_internal_ip() {
     echo "${ip:-127.0.0.1}"
 }
 
-SERVER_IP=$(get_server_ip)
+SERVER_IP=$(get_internal_ip)
 
 echo ""
 echo -e "${GREEN}✅ qBittorrent installation completed!${NC}"
