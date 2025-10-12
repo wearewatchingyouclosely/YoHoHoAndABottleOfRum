@@ -315,12 +315,6 @@ class ServerDashboard:
                 'icon': '📊',
                 'url': f'http://{server_ip}:9090',
                 'status': self.check_service_status(f'http://{server_ip}:9090')
-            },
-            'unpackerr_metrics': {
-                'name': 'Unpackerr Metrics',
-                'icon': '📦',
-                'url': f'http://{server_ip}:5656/metrics',
-                'status': self.check_service_status(f'http://{server_ip}:5656/metrics')
             }
         }
         

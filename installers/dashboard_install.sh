@@ -1,3 +1,6 @@
+# Ensure dashboard user is in nordvpn group for Snap CLI access
+echo -e "${YELLOW}  → Adding dashboard user to nordvpn group${NC}"
+sudo usermod -aG nordvpn dashboard 2>/dev/null || echo "Could not add dashboard user to nordvpn group"
 # Commit History:
 #   2025-10-12 19:14:14 -0400 | mitchell | f034589b | Update commit history in scripts for consistency and tracking
 # ---
