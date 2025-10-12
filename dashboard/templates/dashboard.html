@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YoHoHoAndABottleOfRum - Media Server Dashboard</title>
     <style>
+        body.bg-image {
+            background-size: cover !important;
+            background-position: center center !important;
+            background-repeat: no-repeat !important;
+            transition: background-image 0.5s ease;
+        }
         * {
             margin: 0;
             padding: 0;
@@ -518,35 +524,7 @@
             </div>
         </div>
         <div class="header">
-            <div class="ascii-banner">═══════════════════════════════════════════════════════════════════
-                     M                          
-                    dM                          
-                    MMr                         
-                   4MMML                  .     
-                   MMMMM.                xf     
-   .              "MMMMM               .MM-     
-    Mh..          +MMMMMM            .MMMM      
-    .MMM.         .MMMMML.          MMMMMh      
-     )MMMh.        MMMMMM         MMMMMMM       
-      3MMMMx.     'MMMMMMf      xnMMMMMM"       
-      "*MMMMM      MMMMMM.     nMMMMMMP"        
-        *MMMMMx    "MMMMM\    .MMMMMMM=         
-         *MMMMMh   "MMMMM"   JMMMMMMP           
-           MMMMMM   3MMMM.  dMMMMMM            .
-            MMMMMM  "MMMM  .MMMMM(        .nnMP"
-=..          *MMMMx  MMM"  dMMMM"    .nnMMMMM*  
-  "MMn...     'MMMMr 'MM   MMM"   .nMMMMMMM*"   
-   "4MMMMnn..   *MMM  MM  MMP"  .dMMMMMMM""     
-     ^MMMMMMMMx.  *ML "M .M*  .MMMMMM**"        
-        *PMMMMMMhn. *x > M  .MMMM**""           
-           ""**MMMMhx/.h/ .=*"                  
-                    .3P"%....                   
-                  nP"     "*MMnx               
-            STONED LOSER MEDIA SERVER
-        YoHoHoAndABottleOfRum - WAWYC
-
-  form over function, there may be info above here
-═══════════════════════════════════════════════════════════════════</div>
+                        <!-- Banner removed, replaced with random background image -->
             
             <div class="quote-section">
                 <strong>"Current System Message:"</strong> <span id="daily-quote">Loading wisdom...</span>
@@ -642,6 +620,27 @@
     </div>
 
     <script>
+        function setRandomBackground() {
+            fetch('/images/')
+                .then(response => response.text())
+                .then(html => {
+                    // Parse image filenames from directory listing
+                    const matches = html.match(/href="([^"]+\.(jpg|jpeg|png|gif|webp))"/gi);
+                    if (matches && matches.length > 0) {
+                        const images = matches.map(m => m.match(/href="([^"]+)"/)[1]);
+                        const chosen = images[Math.floor(Math.random() * images.length)];
+                        document.body.classList.add('bg-image');
+                        document.body.style.backgroundImage = `url('/images/${chosen}')`;
+                    } else {
+                        document.body.classList.remove('bg-image');
+                        document.body.style.backgroundImage = '';
+                    }
+                })
+                .catch(() => {
+                    document.body.classList.remove('bg-image');
+                    document.body.style.backgroundImage = '';
+                });
+        }
         let isLoading = false;
         let mobileServices = [];
         let currentMobileIndex = 0;
@@ -782,7 +781,7 @@
             
             isLoading = true;
             document.body.classList.add('loading');
-            
+            setRandomBackground();
             fetch('/api/status')
                 .then(response => response.json())
                 .then(data => {
@@ -817,52 +816,60 @@
             // Update media services
             const mediaServicesContainer = document.getElementById('media-services');
             mediaServicesContainer.innerHTML = '';
-            
-            Object.entries(data.services).forEach(([key, service]) => {
-                const serviceElement = document.createElement('div');
-                serviceElement.className = 'service';
-                serviceElement.onclick = () => window.open(service.url, '_blank');
-                
-                serviceElement.innerHTML = `
-                    <div class="service-info">
-                        <div class="service-icon">${service.icon}</div>
-                        <div class="service-details">
-                            <h3>${service.name}</h3>
-                            <div class="service-url">${service.url}</div>
+                Object.entries(data.services).forEach(([key, service]) => {
+                    // Only show true media services (with GUI)
+                    if (key === 'unpackerr') return; // Unpackerr is a system service, not media
+                    const serviceElement = document.createElement('div');
+                    serviceElement.className = 'service';
+                    serviceElement.onclick = () => window.open(service.url, '_blank');
+                    serviceElement.innerHTML = `
+                        <div class="service-info">
+                            <div class="service-icon">${service.icon}</div>
+                            <div class="service-details">
+                                <h3>${service.name}</h3>
+                                <div class="service-url">${service.url}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="status ${service.status}">${service.status}</div>
-                `;
-                
-                mediaServicesContainer.appendChild(serviceElement);
-            });
+                        <div class="status ${service.status}">${service.status}</div>
+                    `;
+                    mediaServicesContainer.appendChild(serviceElement);
+                });
 
             // Update VPN status
             const vpnContainer = document.getElementById('vpn-status');
             const vpn = data.nordvpn;
-            
+            let vpnHtml = '';
             if (vpn.status === 'connected') {
-                vpnContainer.innerHTML = `
+                vpnHtml = `
                     <div class="vpn-status vpn-connected">
                         <strong>🛡️ NordVPN: Connected</strong><br>
-                        <small>${vpn.country}/${vpn.city} (${vpn.technology})</small><br>
-                        <small>Server: ${vpn.server}</small>
+                        <small>${vpn.country ? vpn.country : ''}${vpn.city ? '/' + vpn.city : ''}${vpn.technology ? ' (' + vpn.technology + ')' : ''}</small><br>
+                        <small>Server: ${vpn.server ? vpn.server : 'N/A'}</small>
                     </div>
                 `;
-            } else if (vpn.status === 'disconnected') {
-                vpnContainer.innerHTML = `
+            } else if (vpn.status === 'disconnected' || vpn.status === 'not_logged_in' || vpn.status === 'not_connected') {
+                vpnHtml = `
                     <div class="vpn-status vpn-disconnected">
-                        <strong>🛡️ NordVPN: Disconnected</strong><br>
+                        <strong>🛡️ NordVPN: ${vpn.status.replace('_', ' ').replace('not connected', 'Disconnected').replace('not logged in', 'Not Logged In').replace('disconnected', 'Disconnected').toUpperCase()}</strong><br>
                         <small>Use 'nordvpn connect' to connect</small>
                     </div>
                 `;
-            } else {
-                vpnContainer.innerHTML = `
+            } else if (vpn.status === 'error' || vpn.status === 'no_service' || vpn.status === 'no_internet') {
+                vpnHtml = `
                     <div class="vpn-status vpn-error">
-                        <strong>🛡️ NordVPN: ${vpn.status.replace('_', ' ').toUpperCase()}</strong>
+                        <strong>🛡️ NordVPN: ${vpn.status.replace('_', ' ').toUpperCase()}</strong><br>
+                        <small>${vpn.message ? vpn.message : 'VPN error or not available.'}</small>
+                    </div>
+                `;
+            } else {
+                vpnHtml = `
+                    <div class="vpn-status vpn-error">
+                        <strong>🛡️ NordVPN: ${vpn.status ? vpn.status.replace('_', ' ').toUpperCase() : 'UNKNOWN'}</strong>
+                        <br><small>${vpn.message ? vpn.message : ''}</small>
                     </div>
                 `;
             }
+            vpnContainer.innerHTML = vpnHtml;
 
             // Update system services
             const systemServicesContainer = document.getElementById('system-services');
@@ -918,12 +925,15 @@
             pathsDiv.innerHTML = `<b>Windows:</b> <span style='color:#fff;'>${uncPath}</span><br><b>Mac:</b> <span style='color:#fff;'>${macPath}</span>`;
 
             winBtn.onclick = () => {
-                // Try to open in Windows Explorer
-                window.open(`file://${uncPath.replace(/\\/g, '/')}/`, '_blank');
-                // Also copy to clipboard for convenience
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(uncPath);
-                }
+                // Create a Windows shortcut (.url) file for download
+                const shortcutContent = `[InternetShortcut]\nURL=${uncPath}\n`;
+                const blob = new Blob([shortcutContent], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'SambaShare.url';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             };
             macBtn.onclick = () => {
                 // Open in Mac Finder

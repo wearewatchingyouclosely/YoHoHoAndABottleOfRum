@@ -19,10 +19,23 @@ echo -e "${MAGENTA}🎬 Installing Plex Media Server...${NC}"
 # Check if Plex is already installed and running
 if systemctl is-active --quiet plexmediaserver 2>/dev/null; then
     echo -e "${GREEN}✅ Plex Media Server is already installed and running${NC}"
-    
-    # Get internal IP for display
-    SERVER_IP=$(ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \K[\d.]+' || hostname -I | awk '{print $1}')
-    
+    # Robust internal IP detection (avoid VPN IPs)
+    SERVER_IP=""
+    for interface in eth0 ens160 ens192 ens33 enp0s3 enp0s8 wlan0 wlp2s0; do
+        SERVER_IP=$(ip addr show "$interface" 2>/dev/null | grep -oP 'inet \K192\.168\.[0-9]+\.[0-9]+|inet \K10\.[0-9]+\.[0-9]+\.[0-9]+|inet \K172\.(1[6-9]|2[0-9]|3[01])\.[0-9]+\.[0-9]+' | head -1)
+        if [[ -n "$SERVER_IP" ]]; then break; fi
+    done
+    if [[ -z "$SERVER_IP" ]]; then
+        for iface_ip in $(ip addr show | grep -E 'inet (192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)' | grep -v 'inet 127\.' | awk '{print $2}' | cut -d'/' -f1); do
+            iface=$(ip addr show | grep "$iface_ip" | grep -oP '^\d+: \K[^:]+' | head -1)
+            if [[ ! "$iface" =~ ^(nordlynx|tun|tap|ppp|wg) ]]; then
+                SERVER_IP="$iface_ip"; break;
+            fi
+        done
+    fi
+    if [[ -z "$SERVER_IP" ]]; then
+        SERVER_IP=$(ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \K[\d.]+' || hostname -I | awk '{print $1}')
+    fi
     echo -e "${CYAN}📺 Current Plex Information:${NC}"
     echo -e "${BLUE}   • Web Interface: ${WHITE}http://$SERVER_IP:32400/web${NC}"
     echo -e "${BLUE}   • Service Status: ${WHITE}Running${NC}"
@@ -93,8 +106,24 @@ if [[ -d "/srv/serverFilesystem" ]]; then
     echo -e "${GREEN}    ✓ Media directory permissions configured${NC}"
 fi
 
-# Get internal IP for display (avoid VPN IP)
-SERVER_IP=$(ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \K[\d.]+' || hostname -I | awk '{print $1}')
+
+# Robust internal IP detection (avoid VPN IPs)
+SERVER_IP=""
+for interface in eth0 ens160 ens192 ens33 enp0s3 enp0s8 wlan0 wlp2s0; do
+    SERVER_IP=$(ip addr show "$interface" 2>/dev/null | grep -oP 'inet \K192\.168\.[0-9]+\.[0-9]+|inet \K10\.[0-9]+\.[0-9]+\.[0-9]+|inet \K172\.(1[6-9]|2[0-9]|3[01])\.[0-9]+\.[0-9]+' | head -1)
+    if [[ -n "$SERVER_IP" ]]; then break; fi
+done
+if [[ -z "$SERVER_IP" ]]; then
+    for iface_ip in $(ip addr show | grep -E 'inet (192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)' | grep -v 'inet 127\.' | awk '{print $2}' | cut -d'/' -f1); do
+        iface=$(ip addr show | grep "$iface_ip" | grep -oP '^\d+: \K[^:]+' | head -1)
+        if [[ ! "$iface" =~ ^(nordlynx|tun|tap|ppp|wg) ]]; then
+            SERVER_IP="$iface_ip"; break;
+        fi
+    done
+fi
+if [[ -z "$SERVER_IP" ]]; then
+    SERVER_IP=$(ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \K[\d.]+' || hostname -I | awk '{print $1}')
+fi
 
 echo -e "${GREEN}✅ Plex Media Server installed and configured successfully${NC}"
 echo -e "${CYAN}📺 Plex Setup Information:${NC}"
