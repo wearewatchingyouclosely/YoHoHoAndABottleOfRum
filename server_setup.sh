@@ -421,6 +421,13 @@ install_samba() {
 
 install_nordvpn() {
     log "Installing NordVPN client"
+    if systemctl is-active --quiet nordvpn 2>/dev/null; then
+        INSTALL_RESULTS[nordvpn]="skipped"
+        INSTALL_ERRORS[nordvpn]="Already installed and running"
+        echo -e "${YELLOW}⚠️ NordVPN already installed - skipping${NC}" >&3
+        log "NordVPN already installed - skipping"
+        return
+    fi
     if [[ -f "$INSTALLERS_DIR/nordvpn_install.sh" ]]; then
         chmod +x "$INSTALLERS_DIR/nordvpn_install.sh"
         if "$INSTALLERS_DIR/nordvpn_install.sh"; then
@@ -521,6 +528,13 @@ install_plex() {
 
 install_overseerr() {
     log "Installing Overseerr request manager"
+    if systemctl is-active --quiet overseerr 2>/dev/null; then
+        INSTALL_RESULTS[overseerr]="skipped"
+        INSTALL_ERRORS[overseerr]="Already installed and running"
+        echo -e "${YELLOW}⚠️ Overseerr already installed - skipping${NC}" >&3
+        log "Overseerr already installed - skipping"
+        return
+    fi
     if [[ -f "$INSTALLERS_DIR/overseerr_install.sh" ]]; then
         chmod +x "$INSTALLERS_DIR/overseerr_install.sh"
         if "$INSTALLERS_DIR/overseerr_install.sh"; then
@@ -541,6 +555,13 @@ install_overseerr() {
 
 install_qbittorrent() {
     log "Installing qBittorrent torrent client"
+    if systemctl is-active --quiet qbittorrent 2>/dev/null; then
+        INSTALL_RESULTS[qbittorrent]="skipped"
+        INSTALL_ERRORS[qbittorrent]="Already installed and running"
+        echo -e "${YELLOW}⚠️ qBittorrent already installed - skipping${NC}" >&3
+        log "qBittorrent already installed - skipping"
+        return
+    fi
     if [[ -f "$INSTALLERS_DIR/qbittorrent_install.sh" ]]; then
         chmod +x "$INSTALLERS_DIR/qbittorrent_install.sh"
         if "$INSTALLERS_DIR/qbittorrent_install.sh"; then
@@ -728,20 +749,21 @@ show_service_status() {
     fi
 }
 
-show_installation_summary() {
     local success_count=0
     local failed_count=0
     local missing_count=0
-    
+    local skipped_count=0
+
     # Count results
     for service in "${!INSTALL_FLAGS[@]}"; do
         case "${INSTALL_RESULTS[$service]}" in
             "success") ((success_count++)) ;;
             "failed") ((failed_count++)) ;;
             "missing") ((missing_count++)) ;;
+            "skipped") ((skipped_count++)) ;;
         esac
     done
-    
+
     echo "" >&3
     if [[ $failed_count -eq 0 && $missing_count -eq 0 ]]; then
         print_fancy_box "🎉 INSTALLATION COMPLETED SUCCESSFULLY! 🎉" "${GREEN}"
@@ -749,14 +771,15 @@ show_installation_summary() {
         print_fancy_box "📊 INSTALLATION COMPLETED WITH MIXED RESULTS" "${YELLOW}"
     fi
     echo "" >&3
-    
+
     # Show detailed results
     echo -e "${CYAN}${BOLD}📈 INSTALLATION SUMMARY:${NC}" >&3
     echo -e "${WHITE}   ✅ Successful: ${GREEN}$success_count${NC}" >&3
     echo -e "${WHITE}   ❌ Failed: ${RED}$failed_count${NC}" >&3  
     echo -e "${WHITE}   ⚠️  Missing: ${YELLOW}$missing_count${NC}" >&3
+    echo -e "${WHITE}   ⏭️  Skipped: ${BLUE}$skipped_count${NC}" >&3
     echo "" >&3
-    
+
     # Show service-by-service results
     if [[ $success_count -gt 0 ]]; then
         echo -e "${GREEN}${BOLD}✅ SUCCESSFULLY INSTALLED:${NC}" >&3
@@ -767,7 +790,17 @@ show_installation_summary() {
         done
         echo "" >&3
     fi
-    
+
+    if [[ $skipped_count -gt 0 ]]; then
+        echo -e "${BLUE}${BOLD}⏭️  SKIPPED (Already Installed):${NC}" >&3
+        for service in "${!INSTALL_FLAGS[@]}"; do
+            if [[ "${INSTALL_RESULTS[$service]}" == "skipped" ]]; then
+                echo -e "  ${BLUE}●${NC} ${SERVICE_DESCRIPTIONS[$(get_service_key "$service")]} - ${INSTALL_ERRORS[$service]}" >&3
+            fi
+        done
+        echo "" >&3
+    fi
+
     if [[ $failed_count -gt 0 ]]; then
         echo -e "${RED}${BOLD}❌ FAILED INSTALLATIONS:${NC}" >&3
         for service in "${!INSTALL_FLAGS[@]}"; do
@@ -777,7 +810,7 @@ show_installation_summary() {
         done
         echo "" >&3
     fi
-    
+
     if [[ $missing_count -gt 0 ]]; then
         echo -e "${YELLOW}${BOLD}⚠️  MISSING INSTALLERS:${NC}" >&3
         for service in "${!INSTALL_FLAGS[@]}"; do
@@ -787,11 +820,11 @@ show_installation_summary() {
         done
         echo "" >&3
     fi
-    
+
     echo -e "${WHITE}${BOLD}📁 Log file location: ${CYAN}$LOG_FILE${NC}" >&3
     echo -e "${WHITE}${BOLD}📁 Configuration files: ${CYAN}$CONFIG_DIR${NC}" >&3
     echo "" >&3
-    
+
     if [[ $success_count -gt 0 ]]; then
         echo -e "${GREEN}${BOLD}✨ Your WAWYC media server has $success_count services ready! ✨${NC}" >&3
         if [[ $failed_count -gt 0 ]]; then
