@@ -642,7 +642,7 @@
             `;
         }
         function setRandomBackground() {
-            fetch('/images/')
+            fetch('/images/backgrounds/')
                 .then(response => response.text())
                 .then(html => {
                     // Parse image filenames from directory listing
@@ -651,7 +651,7 @@
                         const images = matches.map(m => m.match(/href="([^"]+)"/)[1]);
                         const chosen = images[Math.floor(Math.random() * images.length)];
                         document.body.classList.add('bg-image');
-                        document.body.style.backgroundImage = `url('/images/${chosen}')`;
+                        document.body.style.backgroundImage = `url('/images/backgrounds/${chosen}')`;
                     } else {
                         document.body.classList.remove('bg-image');
                         document.body.style.backgroundImage = '';
