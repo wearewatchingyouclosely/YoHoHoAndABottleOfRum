@@ -99,6 +99,38 @@ fi
 cp "$QBT_SETUP_SCRIPT" /tmp/qbt_setup.sh
 chmod +x /tmp/qbt_setup.sh
 
+
+# Robust IP detection function (copied from main installer)
+get_internal_ip() {
+    # Enhanced method to avoid VPN IPs and get true local network IP (from MOTD)
+    local ip=""
+    # Method 1: Find physical interface IP (avoid VPN tunnels)
+    for interface in eth0 ens160 ens192 ens33 enp0s3 enp0s8 wlan0 wlp2s0; do
+        ip=$(ip addr show "$interface" 2>/dev/null | grep -oP 'inet \K192\.168\.[0-9]+\.[0-9]+|inet \K10\.[0-9]+\.[0-9]+\.[0-9]+|inet \K172\.(1[6-9]|2[0-9]|3[01])\.[0-9]+\.[0-9]+' | head -1)
+        if [[ -n "$ip" ]]; then
+            echo "$ip"
+            return 0
+        fi
+    done
+    # Method 2: Get private range IPs, but exclude common VPN ranges
+    for iface_ip in $(ip addr show | grep -E 'inet (192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)' | grep -v 'inet 127\.' | awk '{print $2}' | cut -d'/' -f1); do
+        local iface=$(ip addr show | grep "$iface_ip" | grep -oP '^\d+: \K[^:]+' | head -1)
+        if [[ ! "$iface" =~ ^(nordlynx|tun|tap|ppp|wg) ]]; then
+            echo "$iface_ip"
+            return 0
+        fi
+    done
+    # Method 3: Use ip route to find the default route interface and get its IP
+    ip=$(ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \K[\d.]+')
+    if [[ -n "$ip" ]]; then
+        echo "$ip"
+        return 0
+    fi
+    # Method 4: Last resort - try to find any non-loopback IP
+    ip=$(hostname -I | awk '{print $1}')
+    echo "${ip:-127.0.0.1}"
+}
+
 # Run as qbtuser and pass the server IP
 echo -e "${YELLOW}🔍 Generating qBittorrent config and temporary password...${NC}"
 echo ""
