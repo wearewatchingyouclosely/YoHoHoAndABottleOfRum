@@ -1,3 +1,7 @@
+# Commit History:
+#   2025-10-12 18:56:14 -0400 | mitchell | e5a79f0c | Refactor NordVPN status retrieval for improved logic; add script to update commit headers in source files
+# ---
+
 #!/usr/bin/env python3
 """
 update_commit_headers.py
