@@ -178,7 +178,7 @@ generate_motd() {
     # Random quote at bottom
     if [[ -f "$MOTD_DIR/motd-quotes.txt" ]]; then
         local quote=$(shuf -n 1 "$MOTD_DIR/motd-quotes.txt")
-        echo -e "${WHITE}${BOLD}  Quote of the Day:${NC} ${CYAN}\"$quote\"${NC}"
+        echo -e "${WHITE}${BOLD}  Message Of The Minute:${NC} ${CYAN}\"$quote\"${NC}"
     fi
     
     echo ""
