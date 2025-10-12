@@ -1,4 +1,5 @@
 # Commit History:
+#   2025-10-12 18:56:19 -0400 | mitchell | eb343aeb | Refactor commit header update script for improved functionality and cross-platform compatibility
 #   2025-10-12 18:56:14 -0400 | mitchell | e5a79f0c | Refactor NordVPN status retrieval for improved logic; add script to update commit headers in source files
 # ---
 
