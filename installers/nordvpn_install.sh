@@ -40,6 +40,13 @@ get_internal_ip() {
     echo "${ip:-127.0.0.1}"
 }
 
+
+# Check if NordVPN is already installed and running
+if systemctl is-active --quiet nordvpn 2>/dev/null; then
+    echo -e "${GREEN}✅ NordVPN is already installed and running${NC}"
+    echo -e "${YELLOW}⚠️  Skipping installation (already installed)${NC}"
+    exit 0
+fi
 echo -e "${CYAN}🛡️ Installing NordVPN (WAWYC Method)...${NC}"
 
 # WAWYC NordVPN Installation Implementation

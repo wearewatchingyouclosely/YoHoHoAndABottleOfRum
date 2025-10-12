@@ -42,15 +42,12 @@ get_internal_ip() {
 }
 
 # Check if Overseerr is already installed and running
-if snap list overseerr >/dev/null 2>&1; then
-    # Check if the service is running
-    if systemctl is-active --quiet snap.overseerr.overseerr 2>/dev/null; then
-        SERVER_IP=$(get_internal_ip)
-        echo -e "${GREEN}✅ Overseerr is already installed and running${NC}"
-        echo -e "${BLUE}ℹ️  Access via http://$SERVER_IP:5055${NC}"
-        echo -e "${YELLOW}⚠️  Skipping installation (already installed)${NC}"
-        exit 0
-    fi
+if systemctl is-active --quiet snap.overseerr.overseerr 2>/dev/null; then
+    SERVER_IP=$(get_internal_ip)
+    echo -e "${GREEN}✅ Overseerr is already installed and running${NC}"
+    echo -e "${BLUE}ℹ️  Access via http://$SERVER_IP:5055${NC}"
+    echo -e "${YELLOW}⚠️  Skipping installation (already installed)${NC}"
+    exit 0
 fi
 
 echo -e "${CYAN}📋 Installing Overseerr Request Manager (WAWYC Method)...${NC}"

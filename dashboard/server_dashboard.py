@@ -161,14 +161,12 @@ class ServerDashboard:
             result = subprocess.run(['nordvpn', 'status'], capture_output=True, text=True, timeout=10)
             if result.returncode == 0:
                 status_text = result.stdout
-                
+                # Handle all possible status outputs
                 if 'Status: Connected' in status_text:
-                    # Extract connection details
                     server_match = re.search(r'Server: (.+)', status_text)
                     country_match = re.search(r'Country: (.+)', status_text)
                     city_match = re.search(r'City: (.+)', status_text)
                     tech_match = re.search(r'Current technology: (.+)', status_text)
-                    
                     return {
                         'status': 'connected',
                         'server': server_match.group(1) if server_match else 'Unknown',
@@ -178,11 +176,17 @@ class ServerDashboard:
                     }
                 elif 'Status: Disconnected' in status_text:
                     return {'status': 'disconnected'}
-                else:
+                elif 'Status: Not logged in' in status_text or 'Please log in' in status_text:
                     return {'status': 'not_logged_in'}
+                elif 'Status:' in status_text:
+                    # If status is present but not connected/disconnected/not_logged_in, treat as running
+                    return {'status': 'disconnected'}
+                else:
+                    # If nordvpn status output is unexpected but command succeeded, treat as running
+                    return {'status': 'unknown'}
             else:
-                return {'status': 'not_logged_in'}
-        except:
+                return {'status': 'not_installed'}
+        except Exception:
             return {'status': 'not_installed'}
     
     def get_system_info(self):
