@@ -65,7 +65,12 @@ fi
 echo -e "${YELLOW}  → Creating dashboard user${NC}"
 sudo useradd --system --shell /bin/false --home /opt/dashboard dashboard 2>/dev/null || echo "User dashboard already exists"
 
-# Create directories
+
+# Forcibly stop the dashboard service before overwriting files
+echo -e "${YELLOW}  → Stopping dashboard service (if running)${NC}"
+sudo systemctl stop media-dashboard 2>/dev/null || true
+
+# Create directories and overwrite files
 echo -e "${YELLOW}  → Setting up directories${NC}"
 sudo mkdir -p /opt/dashboard
 sudo rm -rf /opt/dashboard/*
@@ -142,11 +147,12 @@ SyslogIdentifier=media-dashboard
 WantedBy=multi-user.target
 EOF
 
-# Enable and start the dashboard service
-echo -e "${YELLOW}  → Enabling and starting dashboard service${NC}"
+
+# Always restart the dashboard service to apply updates
+echo -e "${YELLOW}  → Enabling and restarting dashboard service${NC}"
 sudo systemctl daemon-reload
 sudo systemctl enable media-dashboard
-sudo systemctl start media-dashboard
+sudo systemctl restart media-dashboard
 
 # Wait for service to start and check status
 echo -e "${YELLOW}  → Checking service status...${NC}"
