@@ -505,6 +505,18 @@
     </div>
 
     <div class="container">
+        <!-- Samba Popup Modal -->
+        <div id="samba-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.6);z-index:2000;justify-content:center;align-items:center;">
+            <div style="background:#222;padding:30px 25px;border-radius:18px;max-width:350px;text-align:center;box-shadow:0 8px 32px #000;">
+                <h2 style="color:#00ff88;margin-bottom:18px;">Samba File Share</h2>
+                <div style="margin-bottom:18px;">
+                    <button id="samba-win-btn" style="background:#0078d7;color:#fff;padding:10px 18px;border:none;border-radius:8px;margin:5px 0;cursor:pointer;font-size:1em;">Open in Windows</button><br>
+                    <button id="samba-mac-btn" style="background:#007aff;color:#fff;padding:10px 18px;border:none;border-radius:8px;margin:5px 0;cursor:pointer;font-size:1em;">Open in Mac</button>
+                </div>
+                <div id="samba-paths" style="font-size:0.95em;color:#ccc;margin-bottom:10px;"></div>
+                <button onclick="closeSambaModal()" style="background:#444;color:#fff;padding:7px 16px;border:none;border-radius:8px;cursor:pointer;">Close</button>
+            </div>
+        </div>
         <div class="header">
             <div class="ascii-banner">═══════════════════════════════════════════════════════════════════
                      M                          
@@ -602,9 +614,11 @@
                     <!-- System services will be loaded here -->
                 </div>
             </div>
+        </div>
 
-            <!-- Resources Card -->
-            <div class="card">
+        <!-- Configuration Resources Row (spans all columns) -->
+        <div style="width:100%;margin-bottom:30px;">
+            <div class="card" style="max-width:1400px;margin:0 auto;">
                 <div class="card-title">
                     📚 Configuration Resources
                 </div>
@@ -619,6 +633,7 @@
                     <div class="status online">Essential</div>
                 </div>
             </div>
+        </div>
         </div>
 
         <div class="footer">
@@ -858,30 +873,11 @@
                 serviceElement.className = 'service';
                 serviceElement.setAttribute('data-service', key);
                 
-                // Add click handler for Samba to open Windows file share
+                // Add click handler for Samba to show Windows/Mac popup
                 if (key === 'samba' && service.status === 'running') {
                     serviceElement.style.cursor = 'pointer';
                     serviceElement.onclick = () => {
-                        // Try multiple methods to open Windows file share
-                        const smbPath = service.smb_path;
-                        
-                        // Method 1: Try file:// protocol
-                        try {
-                            window.open(`file://${smbPath.replace(/\\\\/g, '//')}/`, '_blank');
-                        } catch (e) {
-                            // Method 2: Copy UNC path to clipboard and show instruction
-                            if (navigator.clipboard) {
-                                navigator.clipboard.writeText(smbPath).then(() => {
-                                    alert(`📋 File share path copied to clipboard!\n\nPaste this in Windows File Explorer address bar:\n${smbPath}\n\nOr press Win+R and paste to open directly.`);
-                                }).catch(() => {
-                                    // Method 3: Show the path for manual copy
-                                    const message = `📁 Open this path in Windows File Explorer:\n\n${smbPath}\n\n💡 Tip: Press Win+R, paste the path, and press Enter`;
-                                    alert(message);
-                                });
-                            } else {
-                                alert(`📁 Open this path in Windows File Explorer:\n\n${smbPath}\n\n💡 Tip: Press Win+R, paste the path, and press Enter`);
-                            }
-                        }
+                        showSambaModal(service.smb_path, data.server_ip);
                     };
                 }
                 
@@ -906,6 +902,41 @@
         }
 
         // Auto-refresh every 30 seconds
+        // Samba Modal Logic
+        function showSambaModal(smbPath, serverIp) {
+            const modal = document.getElementById('samba-modal');
+            const winBtn = document.getElementById('samba-win-btn');
+            const macBtn = document.getElementById('samba-mac-btn');
+            const pathsDiv = document.getElementById('samba-paths');
+            modal.style.display = 'flex';
+
+            // UNC path for Windows
+            const uncPath = smbPath;
+            // SMB path for Mac
+            const macPath = `smb://${serverIp}/sambashare`;
+
+            pathsDiv.innerHTML = `<b>Windows:</b> <span style='color:#fff;'>${uncPath}</span><br><b>Mac:</b> <span style='color:#fff;'>${macPath}</span>`;
+
+            winBtn.onclick = () => {
+                // Try to open in Windows Explorer
+                window.open(`file://${uncPath.replace(/\\/g, '/')}/`, '_blank');
+                // Also copy to clipboard for convenience
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(uncPath);
+                }
+            };
+            macBtn.onclick = () => {
+                // Open in Mac Finder
+                window.open(macPath, '_blank');
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(macPath);
+                }
+            };
+        }
+
+        function closeSambaModal() {
+            document.getElementById('samba-modal').style.display = 'none';
+        }
         setInterval(refreshData, 30000);
 
         // Initial load

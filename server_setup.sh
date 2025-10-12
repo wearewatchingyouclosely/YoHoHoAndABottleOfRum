@@ -146,8 +146,7 @@ show_service_menu() {
     # Download & Processing
     echo -e "${GREEN}${BOLD}⬬ DOWNLOAD & PROCESSING${NC}" >&3
     echo -e "  ${WHITE}[8]${NC} ${SERVICE_DESCRIPTIONS[8]} ${GREEN}- Recommended${NC}" >&3
-    echo -e "  ${WHITE}[9]${NC} ${SERVICE_DESCRIPTIONS[9]} ${GREEN}- Recommended${NC}" >&3
-    echo ""
+    echo "" 
     
     # Monitoring & Analytics
     echo -e "${GREEN}${BOLD}📊 MONITORING & ANALYTICS${NC}" >&3

@@ -147,47 +147,43 @@ class ServerDashboard:
             return 'not_installed'
 
     def get_nordvpn_status(self):
-        """Get NordVPN connection status"""
-        # First check if nordvpn command exists - match MOTD logic
+        """Get NordVPN connection status (match MOTD logic)"""
+        # Check if nordvpn command exists
         try:
             result = subprocess.run(['sh', '-c', 'command -v nordvpn >/dev/null 2>&1'],
                                   capture_output=True, text=True, timeout=5)
             if result.returncode != 0:
                 return {'status': 'not_installed'}
-        except:
-            return {'status': 'not_installed'}
-        
-        try:
-            result = subprocess.run(['nordvpn', 'status'], capture_output=True, text=True, timeout=10)
-            if result.returncode == 0:
-                status_text = result.stdout
-                # Handle all possible status outputs
-                if 'Status: Connected' in status_text:
-                    server_match = re.search(r'Server: (.+)', status_text)
-                    country_match = re.search(r'Country: (.+)', status_text)
-                    city_match = re.search(r'City: (.+)', status_text)
-                    tech_match = re.search(r'Current technology: (.+)', status_text)
-                    return {
-                        'status': 'connected',
-                        'server': server_match.group(1) if server_match else 'Unknown',
-                        'country': country_match.group(1) if country_match else 'Unknown',
-                        'city': city_match.group(1) if city_match else 'Unknown',
-                        'technology': tech_match.group(1) if tech_match else 'Unknown'
-                    }
-                elif 'Status: Disconnected' in status_text:
-                    return {'status': 'disconnected'}
-                elif 'Status: Not logged in' in status_text or 'Please log in' in status_text:
-                    return {'status': 'not_logged_in'}
-                elif 'Status:' in status_text:
-                    # If status is present but not connected/disconnected/not_logged_in, treat as running
-                    return {'status': 'disconnected'}
-                else:
-                    # If nordvpn status output is unexpected but command succeeded, treat as running
-                    return {'status': 'unknown'}
-            else:
-                return {'status': 'not_installed'}
         except Exception:
             return {'status': 'not_installed'}
+
+        try:
+            result = subprocess.run(['nordvpn', 'status'], capture_output=True, text=True, timeout=10)
+            status_text = result.stdout if result.returncode == 0 else ''
+            if 'Status: Connected' in status_text:
+                country = self._extract_nordvpn_field(status_text, 'Country:')
+                city = self._extract_nordvpn_field(status_text, 'City:')
+                technology = self._extract_nordvpn_field(status_text, 'Current technology:')
+                server = self._extract_nordvpn_field(status_text, 'Server:')
+                return {
+                    'status': 'connected',
+                    'country': country,
+                    'city': city,
+                    'technology': technology,
+                    'server': server
+                }
+            elif 'Status: Disconnected' in status_text:
+                return {'status': 'disconnected'}
+            else:
+                # Anything else is treated as not logged in (MOTD logic)
+                return {'status': 'not_logged_in'}
+        except Exception:
+            return {'status': 'not_installed'}
+
+    def _extract_nordvpn_field(self, text, field):
+        # Helper to extract field value from nordvpn status output
+        match = re.search(rf'{re.escape(field)}\s*(.+)', text)
+        return match.group(1).strip() if match else 'Unknown'
     
     def get_system_info(self):
         """Get basic system information"""

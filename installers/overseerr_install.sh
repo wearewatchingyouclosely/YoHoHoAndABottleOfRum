@@ -42,11 +42,22 @@ get_internal_ip() {
 }
 
 # Check if Overseerr is already installed and running
+
+# Check if Overseerr is already installed and running (systemd)
 if systemctl is-active --quiet snap.overseerr.overseerr 2>/dev/null; then
     SERVER_IP=$(get_internal_ip)
     echo -e "${GREEN}✅ Overseerr is already installed and running${NC}"
     echo -e "${BLUE}ℹ️  Access via http://$SERVER_IP:5055${NC}"
     echo -e "${YELLOW}⚠️  Skipping installation (already installed)${NC}"
+    exit 0
+fi
+
+# Check if snap overseerr is already installed
+if snap list overseerr 2>/dev/null | grep -q '^overseerr '; then
+    SERVER_IP=$(get_internal_ip)
+    echo -e "${GREEN}✅ Overseerr snap package is already installed${NC}"
+    echo -e "${BLUE}ℹ️  Access via http://$SERVER_IP:5055${NC}"
+    echo -e "${YELLOW}⚠️  Skipping installation (snap already installed)${NC}"
     exit 0
 fi
 
