@@ -146,12 +146,12 @@ class ServerDashboard:
         except:
             return 'not_installed'
 
+
     def get_nordvpn_status(self):
-        """Get NordVPN connection status (match MOTD logic)"""
+        """Get NordVPN connection status (aligned with MOTD logic)"""
         # Check if nordvpn command exists
         try:
-            result = subprocess.run(['sh', '-c', 'command -v nordvpn >/dev/null 2>&1'],
-                                  capture_output=True, text=True, timeout=5)
+            result = subprocess.run(['sh', '-c', 'command -v nordvpn >/dev/null 2>&1'], capture_output=True, text=True, timeout=5)
             if result.returncode != 0:
                 return {'status': 'not_installed'}
         except Exception:
@@ -160,15 +160,17 @@ class ServerDashboard:
         try:
             result = subprocess.run(['nordvpn', 'status'], capture_output=True, text=True, timeout=10)
             status_text = result.stdout if result.returncode == 0 else ''
-            # Defensive: Normalize line endings and case
             status_text = status_text.replace('\r', '').replace('\n', '\n').strip()
-            # Parse status line robustly
-            status_line = next((line for line in status_text.split('\n') if line.lower().startswith('status:')), '').lower()
-            if 'connected' in status_line:
-                country = self._extract_nordvpn_field(status_text, 'Country:')
-                city = self._extract_nordvpn_field(status_text, 'City:')
-                technology = self._extract_nordvpn_field(status_text, 'Current technology:')
-                server = self._extract_nordvpn_field(status_text, 'Server:')
+            # Use same logic as motd_setup.sh
+            if 'Status: Connected' in status_text:
+                # Extract fields as in motd_setup.sh
+                def extract(field):
+                    m = re.search(rf'{re.escape(field)}\s*(.+)', status_text)
+                    return m.group(1).strip() if m else ''
+                country = extract('Country:')
+                city = extract('City:')
+                technology = extract('Current technology:')
+                server = extract('Server:')
                 return {
                     'status': 'connected',
                     'country': country,
@@ -176,16 +178,11 @@ class ServerDashboard:
                     'technology': technology,
                     'server': server
                 }
-            elif 'disconnected' in status_line:
+            elif 'Status: Disconnected' in status_text:
                 return {'status': 'disconnected'}
-            elif 'connecting' in status_line:
-                return {'status': 'connecting'}
-            elif 'not logged in' in status_line:
+            elif 'not logged in' in status_text.lower():
                 return {'status': 'not_logged_in'}
             else:
-                # Fallback: try to detect not_logged_in or error
-                if 'not logged in' in status_text.lower():
-                    return {'status': 'not_logged_in'}
                 return {'status': 'error', 'message': status_text.strip()}
         except Exception as e:
             return {'status': 'not_installed', 'message': str(e)}
