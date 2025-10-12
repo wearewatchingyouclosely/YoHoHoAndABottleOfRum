@@ -749,8 +749,6 @@ show_service_status() {
     fi
 }
 
-}
-
 # Installation summary function (moved from show_service_status)
 show_installation_summary() {
     local success_count=0
