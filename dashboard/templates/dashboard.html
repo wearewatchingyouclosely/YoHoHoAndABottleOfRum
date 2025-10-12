@@ -844,6 +844,8 @@
                 Object.entries(data.services).forEach(([key, service]) => {
                     // Only show true media services (with GUI)
                     if (key === 'unpackerr') return; // Unpackerr is a system service, not media
+                    // Only render if service has a URL (i.e., has a GUI)
+                    if (!service.url) return;
                     const serviceElement = document.createElement('div');
                     serviceElement.className = 'service';
                     serviceElement.onclick = () => window.open(service.url, '_blank');
