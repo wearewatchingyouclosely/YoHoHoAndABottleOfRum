@@ -700,50 +700,50 @@ get_internal_ip() {
     echo "${ip:-127.0.0.1}"
 }
 
-# Service status checking function
 show_service_status() {
-    local server_ip=$(get_internal_ip)
-    
+    local server_ip
+    server_ip=$(get_internal_ip)
+
     print_fancy_box "🌐 SERVICE STATUS & ACCESS INFORMATION" "${CYAN}"
     echo ""
-    
+
     # Show status for installed services based on WAWYC setup
     if [[ "${INSTALL_FLAGS[samba]}" == "true" ]]; then
-        echo -e "  ${GREEN}●${NC} ${WHITE}Samba File Share:${NC}    \\\\\\\\$server_ip\\\\sambashare ${GREEN}[READY]${NC}" >&3
+        echo -e "  ${GREEN}●${NC} ${WHITE}Samba File Share:${NC}    \\\\$server_ip\\sambashare ${GREEN}[READY]${NC}" >&3
     fi
-    
+
     if [[ "${INSTALL_FLAGS[radarr]}" == "true" ]]; then
         echo -e "  ${GREEN}●${NC} ${WHITE}Radarr (Movies):${NC}     http://$server_ip:7878 ${GREEN}[READY]${NC}" >&3
     fi
-    
+
     if [[ "${INSTALL_FLAGS[prowlarr]}" == "true" ]]; then
         echo -e "  ${GREEN}●${NC} ${WHITE}Prowlarr (Indexers):${NC} http://$server_ip:9696 ${GREEN}[READY]${NC}" >&3
     fi
-    
+
     if [[ "${INSTALL_FLAGS[sonarr]}" == "true" ]]; then
         echo -e "  ${GREEN}●${NC} ${WHITE}Sonarr (TV):${NC}         http://$server_ip:8989 ${GREEN}[READY]${NC}" >&3
     fi
-    
+
     if [[ "${INSTALL_FLAGS[plex]}" == "true" ]]; then
         echo -e "  ${GREEN}●${NC} ${WHITE}Plex Media Server:${NC}   http://$server_ip:32400/web ${GREEN}[READY]${NC}" >&3
     fi
-    
+
     if [[ "${INSTALL_FLAGS[overseerr]}" == "true" ]]; then
         echo -e "  ${GREEN}●${NC} ${WHITE}Overseerr (Requests):${NC} http://$server_ip:5055 ${GREEN}[READY]${NC}" >&3
     fi
-    
+
     if [[ "${INSTALL_FLAGS[qbittorrent]}" == "true" ]]; then
         echo -e "  ${GREEN}●${NC} ${WHITE}qBittorrent:${NC}         http://$server_ip:8080 ${GREEN}[READY]${NC}" >&3
     fi
-    
+
     if [[ "${INSTALL_FLAGS[nordvpn]}" == "true" ]]; then
         echo -e "  ${BLUE}●${NC} ${WHITE}NordVPN:${NC}             ${YELLOW}Token login required${NC}" >&3
     fi
-    
+
     if [[ "${INSTALL_FLAGS[unpackerr]}" == "true" ]]; then
         echo -e "  ${BLUE}●${NC} ${WHITE}Unpackerr:${NC}           ${YELLOW}Background service - runs automatically${NC}" >&3
     fi
-    
+
     if [[ "${INSTALL_FLAGS[gui]}" == "true" ]]; then
         echo -e "  ${PURPLE}●${NC} ${WHITE}Desktop GUI:${NC}         ${YELLOW}Installed - will activate on next reboot${NC}" >&3
     fi
