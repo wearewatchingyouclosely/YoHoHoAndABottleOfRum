@@ -61,20 +61,30 @@ if ! command -v pip3 >/dev/null 2>&1; then
     which python3-pip || sudo apt install -y python3-pip
 fi
 
-# Create dashboard user
-echo -e "${YELLOW}  → Creating dashboard user${NC}"
-sudo useradd --system --shell /bin/false --home /opt/dashboard dashboard 2>/dev/null || echo "User dashboard already exists"
+
+# Create dashboard user with home in /home/dashboard for Snap compatibility
+echo -e "${YELLOW}  → Creating dashboard user with home /home/dashboard${NC}"
+if id "dashboard" &>/dev/null; then
+    sudo usermod -d /home/dashboard dashboard
+else
+    sudo useradd --system --shell /bin/false --home /home/dashboard dashboard
+fi
+sudo mkdir -p /home/dashboard
+sudo chown dashboard:dashboard /home/dashboard
 
 
 # Forcibly stop the dashboard service before overwriting files
 echo -e "${YELLOW}  → Stopping dashboard service (if running)${NC}"
 sudo systemctl stop media-dashboard 2>/dev/null || true
 
-# Create directories and overwrite files
-echo -e "${YELLOW}  → Setting up directories${NC}"
+
+# Create dashboard app directory (still in /opt/dashboard)
+echo -e "${YELLOW}  → Setting up dashboard app directory${NC}"
 sudo mkdir -p /opt/dashboard
 sudo rm -rf /opt/dashboard/*
 sudo cp -r "$DASHBOARD_DIR"/* /opt/dashboard/
+sudo chown -R dashboard:dashboard /opt/dashboard
+sudo chown -R dashboard:dashboard /home/dashboard
 
 # Copy MOTD quotes file for dashboard
 echo -e "${YELLOW}  → Copying MOTD quotes for dashboard${NC}"
