@@ -1,3 +1,7 @@
+# Commit History:
+#   2025-10-12 19:14:14 -0400 | mitchell | f034589b | Update commit history in scripts for consistency and tracking
+# ---
+
 #!/bin/bash
 # Dashboard Installation Script
 # Creates a web-based dashboard replicating MOTD functionality
