@@ -622,16 +622,11 @@ install_prometheus() {
 install_dashboard() {
     log "Installing Web Dashboard"
     if [[ -f "$INSTALLERS_DIR/dashboard_install.sh" ]]; then
-        chmod +x "$INSTALLERS_DIR/dashboard_install.sh"
-        if "$INSTALLERS_DIR/dashboard_install.sh"; then
-            INSTALL_RESULTS[dashboard]="success"
-            log "Dashboard installation completed successfully"
-        else
-            INSTALL_RESULTS[dashboard]="failed"
-            INSTALL_ERRORS[dashboard]="Installation script failed"
-            echo -e "${RED}❌ Dashboard installation failed - continuing with other services${NC}" >&3
-            log "Dashboard installation failed but continuing"
-        fi
+        # Overwrite old dashboard files before running installer
+        echo -e "${YELLOW}  → Removing old dashboard files (if any)${NC}" >&3
+        sudo rm -rf /opt/dashboard/*
+        # Now run the installer as normal
+        bash "$INSTALLERS_DIR/dashboard_install.sh"
     else
         INSTALL_RESULTS[dashboard]="missing"
         INSTALL_ERRORS[dashboard]="Installer script not found"

@@ -43,27 +43,7 @@ get_internal_ip() {
     echo "${ip:-127.0.0.1}"
 }
 
-# Check if Dashboard is already installed and running
-if systemctl is-active --quiet media-dashboard 2>/dev/null; then
-    SERVER_IP=$(get_internal_ip)
-    echo -e "${GREEN}✅ Dashboard is already installed and running${NC}"
-    echo -e "${BLUE}ℹ️  Access via http://$SERVER_IP:3000${NC}"
-    echo -e "${YELLOW}⚠️  Skipping installation (service already active)${NC}"
-    exit 0
-elif systemctl list-unit-files media-dashboard.service >/dev/null 2>&1; then
-    echo -e "${YELLOW}⚠️  Dashboard service exists but is not running${NC}"
-    echo -e "${BLUE}ℹ️  Attempting to restart...${NC}"
-    sudo systemctl restart media-dashboard
-    sleep 3
-    if systemctl is-active --quiet media-dashboard 2>/dev/null; then
-        SERVER_IP=$(get_internal_ip)
-        echo -e "${GREEN}✅ Dashboard successfully restarted${NC}"
-        echo -e "${BLUE}ℹ️  Access via http://$SERVER_IP:3000${NC}"
-        exit 0
-    else
-        echo -e "${RED}❌ Dashboard failed to restart, continuing with reinstallation...${NC}"
-    fi
-fi
+
 
 echo -e "${CYAN}🎨 Installing Web Dashboard...${NC}"
 echo -e "${BLUE}📱 Creating responsive web interface replicating MOTD functionality${NC}"
