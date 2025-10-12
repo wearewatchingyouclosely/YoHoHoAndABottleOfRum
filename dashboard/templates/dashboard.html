@@ -620,6 +620,27 @@
     </div>
 
     <script>
+        function showDashboardFallback() {
+            const container = document.querySelector('.container');
+            if (!container) return;
+            container.innerHTML = `
+                <div style="max-width:600px;margin:60px auto;padding:40px 30px;background:rgba(30,30,46,0.95);border-radius:18px;text-align:center;box-shadow:0 8px 32px #000;">
+                    <h2 style="color:#ff6b6b;margin-bottom:18px;">Dashboard Not Active</h2>
+                    <p style="color:#fff;font-size:1.1em;margin-bottom:18px;">It looks like you've connected to this server before, but the dashboard isn't currently running.</p>
+                    <div style="text-align:left;color:#ffd700;font-size:1em;margin-bottom:18px;">
+                        <strong>Troubleshooting Steps:</strong>
+                        <ol style="margin-left:20px;">
+                            <li>Make sure the server is powered on and connected to the network.</li>
+                            <li>Check that the dashboard service is running (try <code>systemctl status server_dashboard</code>).</li>
+                            <li>Try refreshing this page or reconnecting in a few moments.</li>
+                            <li>If you recently updated or installed, wait for the dashboard to finish starting.</li>
+                            <li>Contact your server admin if the issue persists.</li>
+                        </ol>
+                    </div>
+                    <button onclick="location.reload()" style="background:#45b7d1;color:#fff;padding:10px 22px;border:none;border-radius:8px;cursor:pointer;font-size:1em;">Retry</button>
+                </div>
+            `;
+        }
         function setRandomBackground() {
             fetch('/images/')
                 .then(response => response.text())
@@ -783,12 +804,16 @@
             document.body.classList.add('loading');
             setRandomBackground();
             fetch('/api/status')
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) throw new Error('Dashboard API not available');
+                    return response.json();
+                })
                 .then(data => {
                     updateDashboard(data);
                 })
                 .catch(error => {
                     console.error('Error fetching data:', error);
+                    showDashboardFallback();
                 })
                 .finally(() => {
                     isLoading = false;
