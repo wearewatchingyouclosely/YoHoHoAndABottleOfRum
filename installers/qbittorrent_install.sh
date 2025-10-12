@@ -36,22 +36,15 @@ if ! id "qbtuser" &>/dev/null; then
     echo -e "${CYAN}${BOLD}╔════════════════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}${BOLD}║                        👤 USER CREATION REQUIRED 👤                       ║${NC}"
     echo -e "${CYAN}${BOLD}║                                                                            ║${NC}"
-    echo -e "${CYAN}${BOLD}║  The system will now prompt you to create the 'qbtuser' account.          ║${NC}"
-    echo -e "${CYAN}${BOLD}║                                                                            ║${NC}"
-    echo -e "${CYAN}${BOLD}║  REQUIRED: Set a password you'll remember                                  ║${NC}"
-    echo -e "${CYAN}${BOLD}║  OPTIONAL: All other fields (Full Name, etc.) - press Enter to skip       ║${NC}"
+    echo -e "${CYAN}${BOLD}║  The system will now create the 'qbtuser' account with no prompts         ║${NC}"
+    echo -e "${CYAN}${BOLD}║  except for password.                                                     ║${NC}"
     echo -e "${CYAN}${BOLD}║                                                                            ║${NC}"
     echo -e "${CYAN}${BOLD}╚════════════════════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    echo -e "${YELLOW}${BOLD}Press ENTER when ready to create qbtuser account...${NC}"
-    read -r
-    echo ""
-    
-    echo -e "${CYAN}📝 Creating qbtuser account (interactive setup required)${NC}"
+    echo -e "${CYAN}📝 Creating qbtuser account (only password prompt)${NC}"
     echo -e "${WHITE}   When prompted, set a password you'll remember${NC}"
-    echo -e "${WHITE}   All other fields are optional - press Enter to skip${NC}"
     echo ""
-    adduser qbtuser
+    adduser --gecos "" qbtuser
 else
     echo -e "${GREEN}✓ qbtuser already exists${NC}"
 fi
@@ -181,10 +174,11 @@ else
 fi
 
 # Get server IP for web interface (VPN-aware method)
-get_server_ip() {
-    # Enhanced method to avoid VPN IPs and get true local network IP
+
+# Robust IP detection function (copied from main installer)
+get_internal_ip() {
+    # Enhanced method to avoid VPN IPs and get true local network IP (from MOTD)
     local ip=""
-    
     # Method 1: Find physical interface IP (avoid VPN tunnels)
     for interface in eth0 ens160 ens192 ens33 enp0s3 enp0s8 wlan0 wlp2s0; do
         ip=$(ip addr show "$interface" 2>/dev/null | grep -oP 'inet \K192\.168\.[0-9]+\.[0-9]+|inet \K10\.[0-9]+\.[0-9]+\.[0-9]+|inet \K172\.(1[6-9]|2[0-9]|3[01])\.[0-9]+\.[0-9]+' | head -1)
@@ -193,8 +187,7 @@ get_server_ip() {
             return 0
         fi
     done
-    
-    # Method 2: Exclude VPN interfaces
+    # Method 2: Get private range IPs, but exclude common VPN ranges
     for iface_ip in $(ip addr show | grep -E 'inet (192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)' | grep -v 'inet 127\.' | awk '{print $2}' | cut -d'/' -f1); do
         local iface=$(ip addr show | grep "$iface_ip" | grep -oP '^\d+: \K[^:]+' | head -1)
         if [[ ! "$iface" =~ ^(nordlynx|tun|tap|ppp|wg) ]]; then
@@ -202,9 +195,14 @@ get_server_ip() {
             return 0
         fi
     done
-    
-    # Method 3: Fallback
-    ip=$(ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \K[\d.]+' || hostname -I | awk '{print $1}')
+    # Method 3: Use ip route to find the default route interface and get its IP
+    ip=$(ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \K[\d.]+')
+    if [[ -n "$ip" ]]; then
+        echo "$ip"
+        return 0
+    fi
+    # Method 4: Last resort - try to find any non-loopback IP
+    ip=$(hostname -I | awk '{print $1}')
     echo "${ip:-127.0.0.1}"
 }
 

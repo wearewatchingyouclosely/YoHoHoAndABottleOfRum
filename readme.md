@@ -79,7 +79,7 @@ Replace `username` with your Ubuntu username and `YOUR_SERVER_IP` with the IP fr
 ### Step 5: Install This Media Server
 ```bash
 # Clone the repository
-git clone [REPO URL]
+git clone https://github.com/wearewatchingyouclosely/YoHoHoAndABottleOfRum
 
 # Navigate to the directory
 cd YoHoHoAndABottleOfRum
