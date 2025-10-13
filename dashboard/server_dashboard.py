@@ -272,7 +272,7 @@ class ServerDashboard:
         """Get all dashboard data"""
         server_ip = self.get_internal_ip()  # Get fresh IP each time
         
-        # Media services
+        # Media services (Unpackerr removed, only in system_services)
         services = {
             'radarr': {
                 'name': 'Radarr (Movies)',

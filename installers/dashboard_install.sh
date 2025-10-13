@@ -85,10 +85,12 @@ echo -e "${YELLOW}  → Stopping dashboard service (if running)${NC}"
 sudo systemctl stop media-dashboard 2>/dev/null || true
 
 
+
 # Create dashboard app directory (still in /opt/dashboard)
 echo -e "${YELLOW}  → Setting up dashboard app directory${NC}"
 sudo mkdir -p /opt/dashboard
-sudo rm -rf /opt/dashboard/*
+# Remove all files, including hidden ones, except . and ..
+sudo find /opt/dashboard -mindepth 1 -exec rm -rf {} +
 sudo cp -r "$DASHBOARD_DIR"/* /opt/dashboard/
 sudo chown -R dashboard:dashboard /opt/dashboard
 sudo chown -R dashboard:dashboard /home/dashboard
