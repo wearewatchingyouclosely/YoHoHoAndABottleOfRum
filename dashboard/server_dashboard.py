@@ -13,7 +13,8 @@ YoHoHoAndABottleOfRum Media Server Dashboard
 A web-based dashboard replicating MOTD functionality with responsive design
 """
 
-from flask import Flask, render_template, jsonify
+
+from flask import Flask, render_template, jsonify, send_from_directory
 import subprocess
 import re
 import requests
@@ -23,7 +24,17 @@ from datetime import datetime
 import socket
 import random
 
-app = Flask(__name__)
+# Serve /images/* from the main images directory (one level up from dashboard)
+app = Flask(__name__, static_url_path='/images', static_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), '../images')))
+
+# Optional: fallback route for directory listing (for setRandomBackground)
+@app.route('/images/backgrounds/')
+def list_backgrounds():
+    backgrounds_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../images/backgrounds'))
+    files = [f for f in os.listdir(backgrounds_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp'))]
+    # Return a simple HTML directory listing
+    links = ''.join(f'<a href="{f}">{f}</a><br>' for f in files)
+    return f'<html><body>{links}</body></html>'
 
 class ServerDashboard:
     def __init__(self):
