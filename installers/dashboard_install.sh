@@ -102,6 +102,16 @@ sudo cp "$SCRIPT_DIR/../MOTD/motd-quotes.txt" /opt/dashboard/MOTD/ 2>/dev/null |
 
 sudo chown -R dashboard:dashboard /opt/dashboard
 
+# Copy images (backgrounds) so dashboard has access to /images/backgrounds
+echo -e "${YELLOW}  → Copying images for dashboard backgrounds (if present)${NC}"
+if [ -d "$SCRIPT_DIR/../images" ]; then
+    sudo rm -rf /opt/dashboard/images
+    sudo cp -r "$SCRIPT_DIR/../images" /opt/dashboard/
+    sudo chown -R dashboard:dashboard /opt/dashboard/images
+else
+    echo "No images directory found in repo; skipping background copy"
+fi
+
 # Create Python virtual environment and install requirements
 echo -e "${YELLOW}  → Setting up Python environment${NC}"
 sudo -u dashboard python3 -m venv /opt/dashboard/venv

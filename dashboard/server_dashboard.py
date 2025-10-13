@@ -31,10 +31,21 @@ app = Flask(__name__, static_url_path='/images', static_folder=os.path.abspath(o
 @app.route('/images/backgrounds/')
 def list_backgrounds():
     backgrounds_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../images/backgrounds'))
+    if not os.path.isdir(backgrounds_dir):
+        return '<html><body>No backgrounds found</body></html>'
     files = [f for f in os.listdir(backgrounds_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp'))]
     # Return a simple HTML directory listing
     links = ''.join(f'<a href="{f}">{f}</a><br>' for f in files)
     return f'<html><body>{links}</body></html>'
+
+
+@app.route('/api/backgrounds')
+def api_backgrounds():
+    backgrounds_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../images/backgrounds'))
+    if not os.path.isdir(backgrounds_dir):
+        return jsonify({'backgrounds': []})
+    files = [f for f in os.listdir(backgrounds_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp'))]
+    return jsonify({'backgrounds': files})
 
 class ServerDashboard:
     def __init__(self):
