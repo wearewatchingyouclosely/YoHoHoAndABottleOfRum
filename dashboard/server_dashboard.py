@@ -24,13 +24,28 @@ from datetime import datetime
 import socket
 import random
 
-# Serve /images/* from the main images directory (one level up from dashboard)
-app = Flask(__name__, static_url_path='/images', static_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), '../images')))
+# Resolve the images directory depending on whether running from repo or installed in /opt/dashboard
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+IMAGES_DIR_CANDIDATE_LOCAL = os.path.join(BASE_DIR, 'images')        # /opt/dashboard/images when installed
+IMAGES_DIR_CANDIDATE_REPO = os.path.abspath(os.path.join(BASE_DIR, '..', 'images'))  # repo/images during development
+
+# Prefer local images (same folder as dashboard). If absent, fall back to repo-level images.
+if os.path.isdir(IMAGES_DIR_CANDIDATE_LOCAL):
+    IMAGES_DIR = IMAGES_DIR_CANDIDATE_LOCAL
+elif os.path.isdir(IMAGES_DIR_CANDIDATE_REPO):
+    IMAGES_DIR = IMAGES_DIR_CANDIDATE_REPO
+else:
+    # Default to local path (may be created by installer later)
+    IMAGES_DIR = IMAGES_DIR_CANDIDATE_LOCAL
+
+app = Flask(__name__, static_url_path='/images', static_folder=IMAGES_DIR)
+print(f"[dashboard] IMAGES_DIR resolved to: {IMAGES_DIR}")
+
 
 # Optional: fallback route for directory listing (for setRandomBackground)
 @app.route('/images/backgrounds/')
 def list_backgrounds():
-    backgrounds_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../images/backgrounds'))
+    backgrounds_dir = os.path.join(IMAGES_DIR, 'backgrounds')
     if not os.path.isdir(backgrounds_dir):
         return '<html><body>No backgrounds found</body></html>'
     files = [f for f in os.listdir(backgrounds_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp'))]
@@ -41,10 +56,12 @@ def list_backgrounds():
 
 @app.route('/api/backgrounds')
 def api_backgrounds():
-    backgrounds_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../images/backgrounds'))
+    backgrounds_dir = os.path.join(IMAGES_DIR, 'backgrounds')
     if not os.path.isdir(backgrounds_dir):
+        print(f"[dashboard] /api/backgrounds: no backgrounds dir at {backgrounds_dir}")
         return jsonify({'backgrounds': []})
     files = [f for f in os.listdir(backgrounds_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp'))]
+    print(f"[dashboard] /api/backgrounds: found {len(files)} files")
     return jsonify({'backgrounds': files})
 
 class ServerDashboard:
