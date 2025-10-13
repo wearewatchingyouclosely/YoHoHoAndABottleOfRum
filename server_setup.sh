@@ -622,11 +622,18 @@ install_prometheus() {
 install_dashboard() {
     log "Installing Web Dashboard"
     if [[ -f "$INSTALLERS_DIR/dashboard_install.sh" ]]; then
-        # Overwrite old dashboard files before running installer
+        # Stop service first, overwrite old dashboard files, then run installer
+        echo -e "${YELLOW}  → Stopping media-dashboard service (if running)${NC}" >&3
+        sudo systemctl stop media-dashboard.service 2>/dev/null || true
+
         echo -e "${YELLOW}  → Removing old dashboard files (if any)${NC}" >&3
-        sudo rm -rf /opt/dashboard/*
-        # Now run the installer as normal
-        bash "$INSTALLERS_DIR/dashboard_install.sh"
+        if [ -d /opt/dashboard ]; then
+            sudo find /opt/dashboard -mindepth 1 -maxdepth 2 -exec rm -rf {} + || sudo rm -rf /opt/dashboard/* /opt/dashboard/.[!.]* 2>/dev/null || true
+        fi
+
+        # Run the installer as root to ensure proper permissions/systemd access
+        echo -e "${YELLOW}  → Running dashboard installer${NC}" >&3
+        sudo bash "$INSTALLERS_DIR/dashboard_install.sh"
     else
         INSTALL_RESULTS[dashboard]="missing"
         INSTALL_ERRORS[dashboard]="Installer script not found"

@@ -80,20 +80,23 @@ sudo mkdir -p /home/dashboard
 sudo chown dashboard:dashboard /home/dashboard
 
 
-# Forcibly stop the dashboard service before overwriting files
+# Forcibly stop the dashboard service before overwriting files (idempotent)
 echo -e "${YELLOW}  → Stopping dashboard service (if running)${NC}"
-sudo systemctl stop media-dashboard 2>/dev/null || true
+sudo systemctl stop media-dashboard.service 2>/dev/null || true
 
 
 
 # Create dashboard app directory (still in /opt/dashboard)
 echo -e "${YELLOW}  → Setting up dashboard app directory${NC}"
 sudo mkdir -p /opt/dashboard
-# Remove all files, including hidden ones, except . and ..
-sudo find /opt/dashboard -mindepth 1 -exec rm -rf {} +
-sudo cp -r "$DASHBOARD_DIR"/* /opt/dashboard/
-sudo chown -R dashboard:dashboard /opt/dashboard
-sudo chown -R dashboard:dashboard /home/dashboard
+# Remove all files, including hidden ones — use safe removal and fallback
+if [ -d /opt/dashboard ]; then
+    sudo find /opt/dashboard -mindepth 1 -maxdepth 2 -exec rm -rf {} + || sudo rm -rf /opt/dashboard/* /opt/dashboard/.[!.]* 2>/dev/null || true
+fi
+# Copy new dashboard files into place; tolerate empty source during development
+sudo cp -r "$DASHBOARD_DIR"/* /opt/dashboard/ 2>/dev/null || true
+sudo chown -R dashboard:dashboard /opt/dashboard || true
+sudo chown -R dashboard:dashboard /home/dashboard || true
 
 # Copy MOTD quotes file for dashboard
 echo -e "${YELLOW}  → Copying MOTD quotes for dashboard${NC}"
@@ -140,15 +143,14 @@ sudo tee /opt/dashboard/start_dashboard.sh > /dev/null <<'EOF'
 #!/bin/bash
 cd /opt/dashboard
 
-# Try virtual environment first
-if [[ -f "/opt/dashboard/venv/bin/python" ]]; then
-    echo "🐍 Using virtual environment"
-    source /opt/dashboard/venv/bin/activate
-    exec python server_dashboard.py
+# Prefer the explicit virtualenv python binary when available to avoid PATH issues
+if [[ -x "/opt/dashboard/venv/bin/python" ]]; then
+    echo "🐍 Starting with virtualenv python"
+    exec /opt/dashboard/venv/bin/python /opt/dashboard/server_dashboard.py
 else
-    echo "🐍 Using system Python"
+    echo "🐍 Starting with system python3"
     export PYTHONPATH="/usr/lib/python3/dist-packages:/opt/dashboard:$PYTHONPATH"
-    exec python3 server_dashboard.py
+    exec python3 /opt/dashboard/server_dashboard.py
 fi
 EOF
 
@@ -177,11 +179,12 @@ WantedBy=multi-user.target
 EOF
 
 
-# Always restart the dashboard service to apply updates
+# Always reload and enable/start the dashboard service to apply updates (idempotent)
 echo -e "${YELLOW}  → Enabling and restarting dashboard service${NC}"
-sudo systemctl daemon-reload
-sudo systemctl enable media-dashboard
-sudo systemctl restart media-dashboard
+sudo systemctl daemon-reload 2>/dev/null || true
+# Try enable+start, fall back to start if enable fails (handles transient states)
+sudo systemctl enable --now media-dashboard.service 2>/dev/null || sudo systemctl start media-dashboard.service 2>/dev/null || true
+sudo systemctl restart media-dashboard.service 2>/dev/null || true
 
 # Wait for service to start and check status
 echo -e "${YELLOW}  → Checking service status...${NC}"
