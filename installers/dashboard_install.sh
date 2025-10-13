@@ -98,6 +98,11 @@ sudo cp -r "$DASHBOARD_DIR"/* /opt/dashboard/ 2>/dev/null || true
 sudo chown -R dashboard:dashboard /opt/dashboard || true
 sudo chown -R dashboard:dashboard /home/dashboard || true
 
+# Remove Python caches so updated code/templates are used immediately
+echo -e "${YELLOW}  → Cleaning up Python caches${NC}"
+sudo find /opt/dashboard -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+sudo find /opt/dashboard -type f -name '*.pyc' -delete 2>/dev/null || true
+
 # Copy MOTD quotes file for dashboard
 echo -e "${YELLOW}  → Copying MOTD quotes for dashboard${NC}"
 sudo mkdir -p /opt/dashboard/MOTD
@@ -192,6 +197,20 @@ sleep 5
 
 if systemctl is-active --quiet media-dashboard; then
     SERVER_IP=$(get_internal_ip)
+    # write an install timestamp for debugging/validation
+    sudo date --iso-8601=seconds > /opt/dashboard/.last_install 2>/dev/null || true
+    # Health check: poll local API so we ensure the new process is responding
+    echo -e "${YELLOW}  → Waiting for dashboard API to respond...${NC}"
+    ok=false
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+        if curl -sS --fail http://127.0.0.1:3000/api/status >/dev/null 2>&1; then
+            ok=true; break
+        fi
+        sleep 2
+    done
+    if [ "$ok" != "true" ]; then
+        echo -e "${YELLOW}⚠️ Dashboard started but API did not respond within timeout. Check logs.${NC}"
+    fi
     
     echo ""
     echo -e "${GREEN}✅ Dashboard installation completed successfully!${NC}"
