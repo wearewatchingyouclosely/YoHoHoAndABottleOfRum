@@ -63,11 +63,11 @@
         const r = await fetch('/api/status');
         const d = await r.json();
         services = [];
-        // merge media and system services
-        Object.entries(d.services).forEach(([k,s])=>{ if(k!=='unpackerr') services.push({name:s.name,status:s.status,url:s.url}); });
-        Object.entries(d.system_services).forEach(([k,s])=>{ services.push({name:s.name,status:s.status,url:s.url||s.smb_path||''}); });
+        // merge media and system services (preserve icons provided by API)
+        Object.entries(d.services).forEach(([k,s])=>{ if(k!=='unpackerr') services.push({name:s.name,status:s.status,url:s.url, icon: s.icon||''}); });
+        Object.entries(d.system_services).forEach(([k,s])=>{ services.push({name:s.name,status:s.status,url:s.url||s.smb_path||'', icon: k==='unpackerr' ? '📦' : '📁'}); });
         // add vpn
-        services.push({name:'NordVPN', status: d.nordvpn.status, url: ''});
+        services.push({name:'NordVPN', status: d.nordvpn.status, url: '', icon: '🛡️'});
         idx = 0;
         show();
       }catch(e){
@@ -78,14 +78,16 @@
 
     function pickIcon(name){
       const n = name.toLowerCase();
-      if(n.includes('plex')) return plexSVG();
-      if(n.includes('radarr')||n.includes('sonarr')||n.includes('prowlarr')) return filmSVG();
-      if(n.includes('qbittorrent')) return downloadSVG();
-      if(n.includes('unpackerr')) return unpackSVG();
-      if(n.includes('prometheus')) return prometheusSVG();
-      if(n.includes('samba')||n.includes('smb')) return sambaSVG();
-      if(n.includes('nordvpn')||n.includes('vpn')) return vpnSVG();
-      return serverSVG();
+      if(n.includes('plex')) return '🎭';
+      if(n.includes('radarr')) return '🎬';
+      if(n.includes('sonarr')) return '📺';
+      if(n.includes('prowlarr')) return '🔍';
+      if(n.includes('qbittorrent')) return '🌊';
+      if(n.includes('unpackerr')) return '📦';
+      if(n.includes('prometheus')) return '📊';
+      if(n.includes('samba')||n.includes('smb')) return '📁';
+      if(n.includes('nordvpn')||n.includes('vpn')) return '🛡️';
+      return '🖥️';
     }
 
     function show(){
@@ -97,18 +99,12 @@
       st.textContent = healthy ? 'online' : (s.status||'offline');
       st.className = 'service-status ' + (healthy ? 'online' : 'offline');
       document.getElementById('mini-url').textContent = s.url || '-';
-      // set icon
-      document.getElementById('mini-icon').innerHTML = pickIcon(s.name);
+      // set icon (prefer API-provided icon when available)
+      const iconEl = document.getElementById('mini-icon');
+      iconEl.textContent = s.icon && s.icon.length ? s.icon : pickIcon(s.name);
     }
 
-  /* --- small inline SVGs --- */
-  function serverSVG(){ return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M7 20h10v-2H7z" fill="rgba(0,0,0,0.2)"/></svg>` }
-  function downloadSVG(){ return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 20h14v-2H5v2zM12 3v10m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>` }
-  function filmSVG(){ return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>` }
-  function unpackSVG(){ return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 7l9-4 9 4v10l-9 4-9-4z" fill="currentColor" opacity="0.95"/></svg>` }
-  function prometheusSVG(){ return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16 5.5 20l2-7L2 9h7z" fill="currentColor"/></svg>` }
-  function sambaSVG(){ return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 12h18M7 6h10M7 18h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>` }
-  function vpnSVG(){ return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 6h-2v6l5 3" fill="currentColor"/></svg>` }
+  /* SVG icons removed — using emoji icons to match main dashboard */
 
     function cycle(){ if(!autoCycle) return; idx=(idx+1)%services.length; show(); }
 
