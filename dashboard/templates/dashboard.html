@@ -10,6 +10,18 @@
             background-position: center center !important;
             background-repeat: no-repeat !important;
             transition: background-image 0.5s ease;
+            position: relative;
+            color: #f0f7f5;
+        }
+
+        /* Dark translucent overlay to improve text contrast over busy backgrounds */
+        body.bg-image::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55));
+            pointer-events: none;
+            z-index: 0;
         }
         * {
             margin: 0;
@@ -34,7 +46,8 @@
             text-align: center;
             margin-bottom: 30px;
             padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 1;
             border-radius: 15px;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -81,11 +94,11 @@
             font-size: 0.6em;
             line-height: 1.1;
             text-align: center;
-            color: #00ff88;
-            text-shadow: 0 0 5px #00ff88;
+            color: #a8ffd0;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(0,255,136,0.12);
             margin: 20px 0;
             padding: 15px;
-            background: rgba(0, 20, 0, 0.3);
+            background: rgba(0, 20, 0, 0.35);
             border-radius: 8px;
             border: 1px solid #00ff88;
             overflow-x: auto;
@@ -97,7 +110,7 @@
             padding: 10px;
             font-style: italic;
             color: #ffd700;
-            background: rgba(255, 215, 0, 0.1);
+            background: rgba(0,0,0,0.35);
             border-radius: 8px;
             border-left: 4px solid #ffd700;
         }
@@ -249,7 +262,7 @@
         }
 
         .card {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(0,0,0,0.42);
             border-radius: 15px;
             padding: 20px;
             backdrop-filter: blur(10px);
@@ -257,6 +270,7 @@
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            z-index: 1;
         }
 
         .card::before {
@@ -291,7 +305,7 @@
             align-items: center;
             padding: 12px 15px;
             margin: 8px 0;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.03);
             border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
@@ -316,6 +330,11 @@
 
         .service-icon {
             font-size: 1.5em;
+        }
+
+        /* stronger text shadows for small labels over backgrounds */
+        .service-details h3, .service-url, .service-url * {
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
         }
 
         .service-details h3 {
@@ -446,6 +465,9 @@
             opacity: 0.6;
             font-size: 0.9em;
         }
+
+        /* When using background images, slightly dim footer and make text high contrast */
+        body.bg-image .footer { background: rgba(0,0,0,0.3); color: #ddd; }
 
         /* Responsive Design */
         @media (max-width: 768px) {
