@@ -116,29 +116,29 @@
             }
         }
 
-        /* Mobile Cycling View for screens < 500px */
+        /* Mobile Cycling View for screens < 500px - only when body has .mini-enabled */
         .mobile-cycling-view {
             display: none;
         }
 
         @media (max-width: 500px) {
-            /* Hide regular dashboard */
-            .container > .grid,
-            .ascii-banner,
-            .quote-section,
-            .server-info {
+            /* Hide regular dashboard only when explicitly enabled for mini mode */
+            .mini-enabled .container > .grid,
+            .mini-enabled .ascii-banner,
+            .mini-enabled .quote-section,
+            .mini-enabled .server-info {
                 display: none !important;
             }
 
-            /* Adjust refresh button for mobile */
-            .refresh-btn {
+            /* Adjust refresh button for mobile when mini-enabled */
+            .mini-enabled .refresh-btn {
                 top: 10px;
                 right: 10px;
                 font-size: 1.2em;
             }
 
-            /* Show mobile cycling view */
-            .mobile-cycling-view {
+            /* Show mobile cycling view when mini-enabled */
+            .mini-enabled .mobile-cycling-view {
                 display: block;
                 text-align: center;
                 padding: 20px 10px;
@@ -788,8 +788,9 @@
             showCurrentMobileService();
         }
 
-        // Handle window resize
+        // Handle window resize (only trigger mini behavior when body has .mini-enabled)
         window.addEventListener('resize', () => {
+            if (!document.body.classList.contains('mini-enabled')) return;
             if (window.innerWidth <= 500) {
                 initializeMobileCycling();
             } else if (mobileInterval) {

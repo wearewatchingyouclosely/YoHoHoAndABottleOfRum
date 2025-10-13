@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YoHoHo - Mini Dashboard</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; background:#111; color:#eee; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+    .card { width:100%; max-width:420px; text-align:center; padding:10px; }
+    .service-name { font-size:1.1em; font-weight:700; margin-bottom:6px; }
+    .service-status { font-size:0.9em; padding:6px 12px; border-radius:10px; display:inline-block; }
+    .online { background:#0b6623; color:#bfffcf; }
+    .offline { background:#5a1a01; color:#ffd6d6; }
+    .url { font-size:0.8em; margin-top:8px; color:#ccc; word-break:break-all; }
+  </style>
+</head>
+<body>
+  <div class="card" id="mini-card">
+    <div class="service-name" id="mini-name">Loading...</div>
+    <div class="service-status offline" id="mini-status">offline</div>
+    <div class="url" id="mini-url">-</div>
+    <div style="margin-top:12px; display:flex; justify-content:center; gap:12px;">
+      <button id="prev-btn" aria-label="Previous" style="padding:6px 10px;border-radius:8px;border:none;background:#333;color:#fff;">◀</button>
+      <button id="next-btn" aria-label="Next" style="padding:6px 10px;border-radius:8px;border:none;background:#333;color:#fff;">▶</button>
+    </div>
+  </div>
+
+  <script>
+  let services = [];
+  let idx = 0;
+  let autoCycle = true;
+  let cycleInterval = null;
+  let resumeTimer = null;
+
+    function fetchServices() {
+      fetch('/api/status').then(r=>r.json()).then(d=>{
+        services = [];
+        // merge media and system services
+        Object.entries(d.services).forEach(([k,s])=>{ if(k!=='unpackerr') services.push({name:s.name,status:s.status,url:s.url}); });
+        Object.entries(d.system_services).forEach(([k,s])=>{ services.push({name:s.name,status:s.status,url:s.url||s.smb_path||''}); });
+        // add vpn
+        services.push({name:'NordVPN', status: d.nordvpn.status, url: ''});
+        idx = 0;
+        show();
+      }).catch(()=>{ document.getElementById('mini-name').textContent='Unavailable'; document.getElementById('mini-status').textContent='offline'; });
+    }
+
+    function show(){
+      if(services.length===0) return;
+      const s = services[idx];
+      document.getElementById('mini-name').textContent = s.name;
+      const st = document.getElementById('mini-status');
+      st.textContent = s.status;
+      st.className = 'service-status ' + (s.status==='running' || s.status==='online' || s.status==='connected' ? 'online' : 'offline');
+      document.getElementById('mini-url').textContent = s.url || '-';
+    }
+
+    function cycle(){ if(!autoCycle) return; idx=(idx+1)%services.length; show(); }
+
+    function manualAdvance(direction){
+      // Pause auto-cycling when user interacts
+      autoCycle = false;
+      clearTimeout(resumeTimer);
+
+      if(direction === 'next') idx = (idx + 1) % services.length;
+      else if(direction === 'prev') idx = (idx - 1 + services.length) % services.length;
+
+      show();
+
+      // Resume auto-cycling after 5s of inactivity
+      resumeTimer = setTimeout(()=>{ autoCycle = true; }, 5000);
+    }
+
+    // Wire buttons
+    document.addEventListener('DOMContentLoaded', ()=>{
+      document.getElementById('prev-btn').addEventListener('click', ()=>manualAdvance('prev'));
+      document.getElementById('next-btn').addEventListener('click', ()=>manualAdvance('next'));
+    });
+
+    fetchServices();
+    setInterval(fetchServices, 30000);
+    cycleInterval = setInterval(cycle, 5000);
+  </script>
+</body>
+</html>

@@ -364,6 +364,20 @@ def index():
     """Main dashboard page"""
     return render_template('dashboard.html')
 
+
+@app.route('/miniDashboard')
+def mini_dashboard():
+    """Lightweight dashboard for small IoT screens (<500px). Uses same API but a trimmed template."""
+    # Keep backwards compatibility but redirect to canonical /mini
+    from flask import redirect, url_for
+    return redirect(url_for('mini'))
+
+
+@app.route('/mini')
+def mini():
+    """Canonical mini dashboard route"""
+    return render_template('dashboard_mini.html')
+
 @app.route('/api/status')
 def api_status():
     """API endpoint for dashboard data"""
