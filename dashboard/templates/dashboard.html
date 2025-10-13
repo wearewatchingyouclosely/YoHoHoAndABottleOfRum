@@ -944,12 +944,12 @@
             modal.style.display = 'flex';
 
             // UNC path for Windows
-            const uncPath = smbPath;
+            // Always display with single backslashes (\\server\share → \server\share)
+            const uncPath = smbPath.replace(/^\\+/, '\\');
+            const displayWinPath = uncPath.replace(/\\+/g, '\\');
             // SMB path for Mac
             const macPath = `smb://${serverIp}/sambashare`;
 
-            // Display Windows path with single backslashes
-            const displayWinPath = uncPath.replace(/\\/g, '\\');
             pathsDiv.innerHTML = `<b>Windows:</b> <span style='color:#fff;'>${displayWinPath}</span><br><b>Mac:</b> <span style='color:#fff;'>${macPath}</span>`;
 
             winBtn.onclick = () => {
