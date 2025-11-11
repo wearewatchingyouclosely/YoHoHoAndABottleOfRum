@@ -258,3 +258,7 @@ else
     
     exit 1
 fi
+
+# Install daily content update system
+echo ""
+"$SCRIPT_DIR/daily_content_update_install.sh"

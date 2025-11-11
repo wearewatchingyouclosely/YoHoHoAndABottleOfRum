@@ -80,8 +80,14 @@ hostname -I
 ### Step 4: SSH Access (Recommended)
 Once network is established, you can use SSH from another computer for easier management:
 
-**Windows:** Use Windows Terminal or download from Microsoft Store  
-**Mac/Linux:** Use built-in terminal - instructions below (no seriously, Mac can do this out of the box.)
+**Windows:** Use [Terminus](https://eugeny.github.io/terminus/) - Download from GitHub releases or Microsoft Store  
+**Mac/Linux:** Use built-in terminal ([SSH setup guide for macOS](https://support.apple.com/guide/terminal/open-or-quit-terminal-apd5265185d-f365-11e8-860c-e22b9bd85c73/mac))  (no seriously, Mac can do this out of the box.)
+
+**Terminal Copy/Paste Tips:**
+- **Copy:** Right-click selected text or Ctrl+Shift+C
+- **Paste:** Right-click in terminal or Ctrl+Shift+V  
+- **Select text:** Click and drag with mouse (just like any other app)
+- Regular Ctrl+C/V won't work - you need the Shift key!
 
 ```bash
 ssh username@YOUR_SERVER_IP

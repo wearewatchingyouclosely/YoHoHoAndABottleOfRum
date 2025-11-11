@@ -68,8 +68,8 @@ class ServerDashboard:
     def __init__(self):
         pass  # Don't cache IP - get it fresh each time
     
-    def get_daily_quote(self):
-        """Get a random quote from the MOTD quotes file"""
+    def get_random_quote(self):
+        """Get a random quote from the MOTD quotes file (changes on every refresh)"""
         try:
             # Try multiple possible paths for quotes file
             possible_paths = [
@@ -90,9 +90,7 @@ class ServerDashboard:
                     quotes = [line.strip() for line in f.readlines() if line.strip()]
                 
                 if quotes:
-                    # Use date as seed for consistent daily quote
-                    today = datetime.now().strftime('%Y-%m-%d')
-                    random.seed(today)
+                    # Random quote on every refresh (no date seeding)
                     return random.choice(quotes)
             
             return "these were not AI generated, ill let it do my programming but i. dont. let. it. do. my. banter."
@@ -381,7 +379,7 @@ class ServerDashboard:
             'nordvpn': self.get_nordvpn_status(),
             'system_info': self.get_system_info(),
             'disk_usage': self.get_disk_usage(),
-            'daily_quote': self.get_daily_quote()
+            'daily_quote': self.get_random_quote()
         }
 
 # Create dashboard instance

@@ -159,6 +159,20 @@ generate_motd() {
     fi
     
     echo ""
+    echo -e "${YELLOW}${BOLD}System Information:${NC}"
+    
+    # Get system stats (matching dashboard logic)
+    uptime_info=$(uptime -p 2>/dev/null || echo "Unknown")
+    load_avg=$(uptime | awk -F'load average:' '{ print $2 }' | sed 's/,//g' | awk '{print $1}' 2>/dev/null || echo "Unknown")
+    memory_info=$(free -h | grep '^Mem:' | awk '{printf "%.1fGB/%.1fGB (%.0f%%)", $3, $2, $3/$2*100}' 2>/dev/null || echo "Unknown")
+    disk_info=$(df -h /srv/serverFilesystem 2>/dev/null | tail -1 | awk '{print $5}' 2>/dev/null || echo "Unknown")
+    
+    echo -e "  ⏰ ${WHITE}Uptime:${NC}         $uptime_info"
+    echo -e "  📊 ${WHITE}Load Average:${NC}  $load_avg"
+    echo -e "  🧠 ${WHITE}Memory Usage:${NC}  $memory_info"
+    echo -e "  💾 ${WHITE}Disk Usage:${NC}    $disk_info (/srv/serverFilesystem)"
+    
+    echo ""
     echo -e "${YELLOW}${BOLD}Configuration Resources:${NC}"
     echo -e "  📚 ${WHITE}TRaSH Guides:${NC}         ${CYAN}https://trash-guides.info/${NC}"
     echo -e "     ${WHITE}Essential for configuring Sonarr, Radarr, and qBittorrent${NC}"
@@ -167,11 +181,11 @@ generate_motd() {
     echo -e "${CYAN}${BOLD}═══════════════════════════════════════════════════════════════════${NC}"
     echo ""
     
-
-        # Display banner
-    if [[ -f "$MOTD_DIR/motd-banner.txt" ]]; then
+    # Display random banner
+    if [[ -d "$MOTD_DIR/banners" && $(ls -A "$MOTD_DIR/banners"/*.txt 2>/dev/null) ]]; then
+        local random_banner=$(ls "$MOTD_DIR/banners"/*.txt | shuf -n 1)
         echo -e "${PURPLE}${BOLD}"
-        cat "$MOTD_DIR/motd-banner.txt"
+        cat "$random_banner"
         echo -e "${NC}"
     fi
 
