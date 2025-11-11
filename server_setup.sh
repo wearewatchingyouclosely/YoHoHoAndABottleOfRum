@@ -1,7 +1,8 @@
 #!/bin/bash
 # Ubuntu/Debian Media Server Setup Script
 # Based on WAWYC tested instructions
-# Version: 1.1 - Updated: October 21, 2025
+# Features: Static IP configuration, MOTD system, automated service installation
+# Version: 1.2 - Updated: November 11, 2025
 
 # Note: Removed 'set -e' to allow continuation after individual service failures
 
@@ -816,6 +817,229 @@ get_internal_ip() {
     echo "${ip:-127.0.0.1}"
 }
 
+# Get network interface for current IP
+get_network_interface() {
+    local target_ip
+    target_ip=$(get_internal_ip)
+    
+    # Find the interface that has this IP
+    ip addr show | grep "$target_ip" | grep -oP '^\d+: \K[^:]+' | head -1
+}
+
+# Configure static IP to prevent DHCP reassignment
+configure_static_ip() {
+    log "Configuring static IP to prevent DHCP reassignment"
+    echo -e "${CYAN}🔧 Configuring static IP address...${NC}" >&3
+    
+    # Check if we're in a container or cloud environment where static IP might not be appropriate
+    if [[ -f /.dockerenv || -f /run/.containerenv || -d /run/systemd/machines ]]; then
+        echo -e "${YELLOW}⚠️  Container environment detected - skipping static IP configuration${NC}" >&3
+        log "Container environment detected - skipping static IP configuration"
+        return 0
+    fi
+    
+    # Check if interface is already configured for static IP
+    local interface
+    interface=$(get_network_interface)
+    if [[ -z "$interface" ]]; then
+        echo -e "${YELLOW}⚠️  Could not determine network interface - skipping static IP configuration${NC}" >&3
+        log "Could not determine network interface for static IP configuration"
+        return 1
+    fi
+    
+    # Check if already using static IP
+    if [[ "$DISTRO_FAMILY" == "ubuntu" ]]; then
+        if [[ -f /etc/netplan/01-netcfg.yaml ]] && grep -q "dhcp4: false" /etc/netplan/01-netcfg.yaml; then
+            echo -e "${BLUE}ℹ️  Static IP already configured - skipping${NC}" >&3
+            log "Static IP already configured in netplan - skipping"
+            return 0
+        fi
+    elif [[ "$DISTRO_FAMILY" == "debian" ]]; then
+        if grep -q "^iface $interface inet static" /etc/network/interfaces 2>/dev/null; then
+            echo -e "${BLUE}ℹ️  Static IP already configured - skipping${NC}" >&3
+            log "Static IP already configured in interfaces - skipping"
+            return 0
+        fi
+    fi
+    
+    local current_ip
+    local subnet_mask
+    local gateway
+    local dns_servers
+    
+    current_ip=$(get_internal_ip)
+    
+    if [[ -z "$current_ip" ]]; then
+        echo -e "${YELLOW}⚠️  Could not determine current IP - skipping static IP configuration${NC}" >&3
+        log "Failed to determine current IP for static configuration"
+        return 1
+    fi
+    
+    echo -e "${WHITE}  → Current IP: ${CYAN}$current_ip${NC}" >&3
+    echo -e "${WHITE}  → Interface: ${CYAN}$interface${NC}" >&3
+    
+    # Get subnet mask from current configuration
+    subnet_mask=$(ip addr show "$interface" | grep "$current_ip" | awk '{print $2}' | cut -d'/' -f2)
+    if [[ -z "$subnet_mask" ]]; then
+        subnet_mask="24"  # Default to /24 if not found
+    fi
+    
+    # Get gateway from routing table
+    gateway=$(ip route show default | awk '{print $3}' | head -1)
+    if [[ -z "$gateway" ]]; then
+        echo -e "${YELLOW}⚠️  Could not determine gateway - skipping static IP configuration${NC}" >&3
+        log "Failed to determine gateway for static IP configuration"
+        return 1
+    fi
+    
+    # Get DNS servers from resolv.conf
+    dns_servers=$(grep -E '^nameserver' /etc/resolv.conf | awk '{print $2}' | head -2 | tr '\n' ' ')
+    if [[ -z "$dns_servers" ]]; then
+        dns_servers="8.8.8.8 8.8.4.4"  # Google DNS as fallback
+    fi
+    
+    echo -e "${WHITE}  → Subnet: ${CYAN}/$subnet_mask${NC}" >&3
+    echo -e "${WHITE}  → Gateway: ${CYAN}$gateway${NC}" >&3
+    echo -e "${WHITE}  → DNS: ${CYAN}$dns_servers${NC}" >&3
+    echo ""
+    echo -e "${YELLOW}⚠️  ${BOLD}STATIC IP CONFIGURATION WARNING${NC}" >&3
+    echo -e "${WHITE}   This will change your network configuration to use a static IP.${NC}" >&3
+    echo -e "${WHITE}   Your server will keep IP: ${CYAN}$current_ip${NC}${WHITE} permanently.${NC}" >&3
+    echo -e "${WHITE}   Make sure this IP is outside your router's DHCP range!${NC}" >&3
+    echo ""
+    
+    # Ask for confirmation
+    read -p "Do you want to configure static IP? (y/N): " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo -e "${BLUE}ℹ️  Static IP configuration skipped by user${NC}" >&3
+        log "Static IP configuration skipped by user choice"
+        return 0
+    fi
+    
+    if [[ "$DISTRO_FAMILY" == "ubuntu" ]]; then
+        # Ubuntu uses Netplan
+        configure_netplan "$interface" "$current_ip" "$subnet_mask" "$gateway" "$dns_servers"
+    elif [[ "$DISTRO_FAMILY" == "debian" ]]; then
+        # Install ipcalc if not available (needed for netmask calculation)
+        if ! command -v ipcalc &> /dev/null; then
+            echo -e "${CYAN}  → Installing ipcalc for netmask calculation...${NC}" >&3
+            apt-get update -qq && apt-get install -y -qq ipcalc >/dev/null 2>&1
+        fi
+        configure_interfaces "$interface" "$current_ip" "$subnet_mask" "$gateway" "$dns_servers"
+    else
+        echo -e "${YELLOW}⚠️  Unsupported distribution for static IP configuration - skipping${NC}" >&3
+        log "Unsupported distribution $DISTRO_FAMILY for static IP configuration"
+        return 1
+    fi
+    
+    echo -e "${GREEN}✅ Static IP configuration applied${NC}" >&3
+    echo -e "${YELLOW}💡 System will use static IP: ${CYAN}$current_ip${NC}${YELLOW} after next reboot${NC}" >&3
+    log "Static IP configuration completed for $interface with IP $current_ip"
+}
+
+# Configure static IP using Netplan (Ubuntu)
+configure_netplan() {
+    local interface="$1"
+    local ip="$2"
+    local subnet="$3"
+    local gateway="$4"
+    local dns="$5"
+    
+    local netplan_file="/etc/netplan/01-netcfg.yaml"
+    
+    echo -e "${CYAN}  → Configuring Netplan for Ubuntu...${NC}" >&3
+    
+    # Backup existing netplan config
+    if [[ -f "$netplan_file" ]]; then
+        cp "$netplan_file" "${netplan_file}.backup.$(date +%Y%m%d_%H%M%S)"
+    fi
+    
+    # Create new netplan configuration
+    cat > "$netplan_file" << EOF
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    $interface:
+      dhcp4: false
+      addresses:
+        - $ip/$subnet
+      routes:
+        - to: default
+          via: $gateway
+      nameservers:
+        addresses: [$(echo "$dns" | sed 's/ /, /g')]
+EOF
+    
+    # Apply netplan configuration
+    if netplan apply 2>/dev/null; then
+        echo -e "${GREEN}  → Netplan configuration applied successfully${NC}" >&3
+    else
+        echo -e "${YELLOW}⚠️  Netplan apply failed - configuration will take effect on next reboot${NC}" >&3
+    fi
+}
+
+# Configure static IP using /etc/network/interfaces (Debian)
+configure_interfaces() {
+    local interface="$1"
+    local ip="$2"
+    local subnet="$3"
+    local gateway="$4"
+    local dns="$5"
+    
+    local interfaces_file="/etc/network/interfaces"
+    
+    echo -e "${CYAN}  → Configuring /etc/network/interfaces for Debian...${NC}" >&3
+    
+    # Backup existing interfaces file
+    cp "$interfaces_file" "${interfaces_file}.backup.$(date +%Y%m%d_%H%M%S)"
+    
+    # Check if interface is already configured
+    if grep -q "^iface $interface inet" "$interfaces_file"; then
+        # Replace existing configuration
+        sed -i "/^iface $interface inet/,/^$/ {
+            /^iface $interface inet/ {
+                s/.*/iface $interface inet static/
+                n
+                /address/ {
+                    s/.*/address $ip/
+                    n
+                    /netmask/ {
+                        s/.*/netmask $(ipcalc -m $ip/$subnet | cut -d'=' -f2)/
+                        n
+                        /gateway/ {
+                            s/.*/gateway $gateway/
+                            n
+                            /dns-nameservers/ {
+                                s/.*/dns-nameservers $dns/
+                            }
+                        }
+                    }
+                }
+            }
+        }" "$interfaces_file"
+    else
+        # Add new configuration
+        cat >> "$interfaces_file" << EOF
+
+# Static IP configuration for $interface (configured by WAWYC)
+iface $interface inet static
+    address $ip
+    netmask $(ipcalc -m $ip/$subnet | cut -d'=' -f2)
+    gateway $gateway
+    dns-nameservers $dns
+EOF
+    fi
+    
+    # Restart networking service
+    if systemctl restart networking 2>/dev/null; then
+        echo -e "${GREEN}  → Network interfaces restarted successfully${NC}" >&3
+    else
+        echo -e "${YELLOW}⚠️  Network restart failed - configuration will take effect on next reboot${NC}" >&3
+    fi
+}
+
 show_service_status() {
     local server_ip
     server_ip=$(get_internal_ip)
@@ -1011,6 +1235,7 @@ main() {
     # System preparation (always performed)
     run_system_updates
     create_filesystem_structure
+    configure_static_ip
     disable_default_motd
     setup_custom_motd
     
