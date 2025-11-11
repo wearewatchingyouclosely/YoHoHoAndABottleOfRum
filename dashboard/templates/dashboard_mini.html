@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YoHoHo - Mini Dashboard</title>
+  <style>
+    :root{ --card-bg: rgba(10,12,16,0.6); --card-fg: #eef2f5; --accent: #6ee7b7; --danger:#ffb4b4; }
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Arial,Helvetica,sans-serif;background:#0b0b0d;color:var(--card-fg);}
+    .page-wrap{height:100%;display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;}
+    .bg-veil{position:fixed;inset:0;background-size:cover;background-position:center;filter:blur(8px) brightness(.45);z-index:0;}
+    .bg-overlay{position:fixed;inset:0;background:linear-gradient(180deg, rgba(6,6,8,0.25), rgba(6,6,8,0.45));z-index:1}
+    .card{position:relative;z-index:2;width:100%;max-width:420px;padding:14px;border-radius:12px;background:var(--card-bg);backdrop-filter: blur(6px) saturate(120%);box-shadow:0 6px 18px rgba(0,0,0,0.6);text-align:center}
+    .service-top{display:flex;align-items:center;gap:12px;justify-content:center}
+    .icon-circle{width:64px;height:64px;border-radius:999px;background:linear-gradient(180deg,#222,#111);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:inset 0 -6px 18px rgba(0,0,0,0.6);}
+    .icon-circle svg{width:36px;height:36px;fill:var(--accent)}
+    .service-name{font-size:1.05rem;font-weight:700;margin:0}
+    .service-status{margin-top:8px;font-size:.9rem;padding:6px 12px;border-radius:999px;display:inline-block}
+    .online{background:linear-gradient(90deg,#0b6623,#2bd98a);color:#04260f}
+    .offline{background:linear-gradient(90deg,#b0301a,#ffb4b4);color:#3b0b00}
+    .url{font-size:0.78rem;margin-top:8px;color:#c9d1d9;word-break:break-all;opacity:0.95}
+
+    /* Buttons */
+    .controls{margin-top:12px;display:flex;justify-content:center;gap:12px}
+    .btn{padding:8px 12px;border-radius:10px;border:none;background:rgba(255,255,255,0.04);color:var(--card-fg);cursor:pointer;backdrop-filter: blur(2px);box-shadow:0 2px 6px rgba(0,0,0,0.4)}
+    .btn:active{transform:translateY(1px)}
+
+    /* Responsive tweaks to keep similar scale */
+    @media (max-width:420px){.card{padding:10px;border-radius:10px}.icon-circle{width:58px;height:58px}.icon-circle svg{width:30px;height:30px}.service-name{font-size:1rem}}
+  </style>
+</head>
+<body>
+  <div class="bg-veil" id="bg-veil" aria-hidden="true"></div>
+  <div class="bg-overlay" aria-hidden="true"></div>
+  <div class="page-wrap">
+    <div class="card" id="mini-card" role="region" aria-label="Mini dashboard">
+      <div class="service-top">
+        <div class="icon-circle" id="mini-icon" aria-hidden="true">
+          <!-- svg injected -->
+        </div>
+        <div style="text-align:left">
+          <div class="service-name" id="mini-name">Loading...</div>
+          <div class="service-status offline" id="mini-status">offline</div>
+        </div>
+      </div>
+      <div class="url" id="mini-url">-</div>
+      <div class="controls">
+        <button id="prev-btn" class="btn" aria-label="Previous">◀ Prev</button>
+        <button id="next-btn" class="btn" aria-label="Next">Next ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  let services = [];
+  let idx = 0;
+  let autoCycle = true;
+  let cycleInterval = null;
+  let resumeTimer = null;
+
+    async function fetchServices() {
+      try{
+        const r = await fetch('/api/status');
+        const d = await r.json();
+        services = [];
+        // merge media and system services (preserve icons provided by API)
+        Object.entries(d.services).forEach(([k,s])=>{ if(k!=='unpackerr') services.push({name:s.name,status:s.status,url:s.url, icon: s.icon||''}); });
+        Object.entries(d.system_services).forEach(([k,s])=>{ services.push({name:s.name,status:s.status,url:s.url||s.smb_path||'', icon: k==='unpackerr' ? '📦' : '📁'}); });
+        // add vpn
+        services.push({name:'NordVPN', status: d.nordvpn.status, url: '', icon: '🛡️'});
+        idx = 0;
+        show();
+      }catch(e){
+        document.getElementById('mini-name').textContent='Unavailable';
+        const st = document.getElementById('mini-status'); st.textContent='offline'; st.className='service-status offline';
+      }
+    }
+
+    function pickIcon(name){
+      const n = name.toLowerCase();
+      if(n.includes('plex')) return '🎭';
+      if(n.includes('radarr')) return '🎬';
+      if(n.includes('sonarr')) return '📺';
+      if(n.includes('prowlarr')) return '🔍';
+      if(n.includes('qbittorrent')) return '🌊';
+      if(n.includes('unpackerr')) return '📦';
+      if(n.includes('prometheus')) return '📊';
+      if(n.includes('samba')||n.includes('smb')) return '📁';
+      if(n.includes('nordvpn')||n.includes('vpn')) return '🛡️';
+      return '🖥️';
+    }
+
+    function show(){
+      if(services.length===0) return;
+      const s = services[idx];
+      document.getElementById('mini-name').textContent = s.name;
+      const st = document.getElementById('mini-status');
+      const healthy = (s.status==='running' || s.status==='online' || s.status==='connected');
+      st.textContent = healthy ? 'online' : (s.status||'offline');
+      st.className = 'service-status ' + (healthy ? 'online' : 'offline');
+      document.getElementById('mini-url').textContent = s.url || '-';
+      // set icon (prefer API-provided icon when available)
+      const iconEl = document.getElementById('mini-icon');
+      iconEl.textContent = s.icon && s.icon.length ? s.icon : pickIcon(s.name);
+    }
+
+  /* SVG icons removed — using emoji icons to match main dashboard */
+
+    function cycle(){ if(!autoCycle) return; idx=(idx+1)%services.length; show(); }
+
+    function manualAdvance(direction){
+      // Pause auto-cycling when user interacts
+      autoCycle = false;
+      clearTimeout(resumeTimer);
+
+      if(direction === 'next') idx = (idx + 1) % services.length;
+      else if(direction === 'prev') idx = (idx - 1 + services.length) % services.length;
+
+      show();
+
+      // Resume auto-cycling after 5s of inactivity
+      resumeTimer = setTimeout(()=>{ autoCycle = true; }, 5000);
+    }
+
+    // Wire buttons
+    document.addEventListener('DOMContentLoaded', ()=>{
+      document.getElementById('prev-btn').addEventListener('click', ()=>manualAdvance('prev'));
+      document.getElementById('next-btn').addEventListener('click', ()=>manualAdvance('next'));
+    });
+
+    // load a background image if available
+    async function setBg(){
+      try{
+        const r = await fetch('/api/backgrounds'); if(!r.ok) return;
+        const payload = await r.json();
+        // backend may return either an array or {backgrounds: [...]}
+        const list = Array.isArray(payload) ? payload : (payload.backgrounds || []);
+        if(!Array.isArray(list) || list.length===0) return;
+        const pick = list[Math.floor(Math.random()*list.length)];
+        // backgrounds are served from /images/backgrounds/<filename>
+        const url = '/images/backgrounds/' + encodeURIComponent(pick);
+        document.getElementById('bg-veil').style.backgroundImage = `url(${url})`;
+      }catch(e){ /* ignore */ }
+    }
+
+    fetchServices();
+    setInterval(fetchServices, 30000);
+    cycleInterval = setInterval(cycle, 5000);
+    setBg();
+  </script>
+</body>
+</html>
