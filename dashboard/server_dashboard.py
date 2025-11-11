@@ -197,7 +197,7 @@ class ServerDashboard:
         """Get NordVPN connection status (aligned with MOTD logic)"""
         # Check if nordvpn command exists
         try:
-            result = subprocess.run(['sh', '-c', 'command -v nordvpn >/dev/null 2>&1'], capture_output=True, text=True, timeout=5)
+            result = subprocess.run(['which', 'nordvpn'], capture_output=True, text=True, timeout=5)
             if result.returncode != 0:
                 return {'status': 'not_installed'}
         except Exception:
@@ -205,8 +205,12 @@ class ServerDashboard:
 
         try:
             result = subprocess.run(['nordvpn', 'status'], capture_output=True, text=True, timeout=10)
-            status_text = result.stdout if result.returncode == 0 else ''
+            status_text = result.stdout if result.returncode == 0 else result.stderr
             status_text = status_text.replace('\r', '').replace('\n', '\n').strip()
+
+            # Debug logging
+            print(f"[dashboard] NordVPN status output: '{status_text}'")
+
             # Use same logic as motd_setup.sh
             if 'Status: Connected' in status_text:
                 # Extract fields as in motd_setup.sh
@@ -229,9 +233,9 @@ class ServerDashboard:
             elif 'not logged in' in status_text.lower():
                 return {'status': 'not_logged_in'}
             else:
-                return {'status': 'error', 'message': status_text.strip()}
+                return {'status': 'error', 'message': f'Unknown status: {status_text.strip()}'}
         except Exception as e:
-            return {'status': 'not_installed', 'message': str(e)}
+            return {'status': 'error', 'message': str(e)}
 
     def _extract_nordvpn_field(self, text, field):
         # Helper to extract field value from nordvpn status output
