@@ -591,11 +591,11 @@
                     </div>
                     <div class="stat">
                         <div class="stat-value" id="memory-usage">-</div>
-                        <div class="stat-label">Memory (Used/Total)</div>
+                        <div class="stat-label">Memory (RAM)</div>
                     </div>
                     <div class="stat">
                         <div class="stat-value" id="disk-usage">-</div>
-                        <div class="stat-label">Disk Usage</div>
+                        <div class="stat-label">Drive Space</div>
                     </div>
                 </div>
             </div>
@@ -856,9 +856,9 @@
 
             // Update system stats
             document.getElementById('uptime').textContent = data.system_info.uptime;
-            document.getElementById('load-avg').textContent = `${data.system_info.load_avg[0]}, ${data.system_info.load_avg[1]}, ${data.system_info.load_avg[2]}`;
-            document.getElementById('memory-usage').textContent = `${data.system_info.memory.used}GB / ${data.system_info.memory.total}GB (${data.system_info.memory.percent}%)`;
-            document.getElementById('disk-usage').textContent = `${data.disk_usage.used} / ${data.disk_usage.total} (${data.disk_usage.percent})`;
+            document.getElementById('load-avg').textContent = data.system_info.load_avg;
+            document.getElementById('memory-usage').textContent = data.system_info.memory;
+            document.getElementById('disk-usage').textContent = data.disk_usage;
 
             // Update media services
             const mediaServicesContainer = document.getElementById('media-services');

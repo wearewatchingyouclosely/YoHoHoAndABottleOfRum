@@ -243,72 +243,82 @@ class ServerDashboard:
         return match.group(1).strip() if match else 'Unknown'
     
     def get_system_info(self):
-        """Get basic system information"""
+        """Get basic system information - matching MOTD calculation methods"""
         try:
-            # Get uptime
-            with open('/proc/uptime', 'r') as f:
-                uptime_seconds = float(f.readline().split()[0])
+            # Get uptime (same as MOTD)
+            result = subprocess.run(['uptime', '-p'], capture_output=True, text=True, timeout=5)
+            uptime_info = result.stdout.strip() if result.returncode == 0 else 'Unknown'
             
-            days = int(uptime_seconds // 86400)
-            hours = int((uptime_seconds % 86400) // 3600)
-            minutes = int((uptime_seconds % 3600) // 60)
+            # Get load average (same as MOTD - only 1-minute average)
+            result = subprocess.run(['uptime'], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                # Extract load average like MOTD: uptime | awk -F'load average:' '{ print $2 }' | sed 's/,//g' | awk '{print $1}'
+                load_parts = result.stdout.split('load average:')[1].split(',')[0].strip() if 'load average:' in result.stdout else '0.0'
+            else:
+                load_parts = '0.0'
             
-            uptime_str = f"{days}d {hours}h {minutes}m"
-            
-            # Get load average
-            with open('/proc/loadavg', 'r') as f:
-                load_avg = f.readline().split()[:3]
-            
-            # Get memory info
-            memory_info = {}
-            with open('/proc/meminfo', 'r') as f:
-                for line in f:
-                    if line.startswith(('MemTotal:', 'MemAvailable:', 'MemFree:')):
-                        key, value = line.split()[:2]
-                        memory_info[key.rstrip(':')] = int(value)
-            
-            total_mem = memory_info.get('MemTotal', 0) / 1024 / 1024  # GB
-            available_mem = memory_info.get('MemAvailable', 0) / 1024 / 1024  # GB
-            used_mem = total_mem - available_mem
-            mem_percent = (used_mem / total_mem * 100) if total_mem > 0 else 0
+            # Get memory info (same as MOTD - using free -h)
+            result = subprocess.run(['free', '-h'], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                lines = result.stdout.strip().split('\n')
+                if len(lines) >= 2:
+                    mem_parts = lines[1].split()
+                    # Format like MOTD: printf "%.1fGB/%.1fGB (%.0f%%)", $3, $2, $3/$2*100
+                    total_mem = mem_parts[1]  # Total memory with unit
+                    used_mem = mem_parts[2]   # Used memory with unit
+                    # Calculate percentage
+                    mem_percent = '0'
+                    if len(mem_parts) >= 3:
+                        try:
+                            # Extract numeric values for percentage calculation
+                            total_val = float(mem_parts[1].rstrip('GMK'))
+                            used_val = float(mem_parts[2].rstrip('GMK'))
+                            if total_val > 0:
+                                mem_percent = f"{used_val/total_val*100:.0f}"
+                        except:
+                            mem_percent = '0'
+                    
+                    memory_info = f"{used_mem}/{total_mem} ({mem_percent}%)"
+                else:
+                    memory_info = 'Unknown'
+            else:
+                memory_info = 'Unknown'
             
             return {
-                'uptime': uptime_str,
-                'load_avg': load_avg,
-                'memory': {
-                    'total': f"{total_mem:.1f}",
-                    'used': f"{used_mem:.1f}",
-                    'available': f"{available_mem:.1f}",
-                    'percent': f"{mem_percent:.1f}"
-                }
+                'uptime': uptime_info,
+                'load_avg': load_parts,
+                'memory': memory_info
             }
         except:
             return {
                 'uptime': 'Unknown',
-                'load_avg': ['0.0', '0.0', '0.0'],
-                'memory': {'total': '0', 'used': '0', 'available': '0', 'percent': '0'}
+                'load_avg': '0.0',
+                'memory': 'Unknown'
             }
     
     def get_disk_usage(self):
-        """Get disk usage for main filesystem"""
+        """Get disk usage for main filesystem - matching MOTD calculation with units"""
         try:
+            # Match MOTD: df -h /srv/serverFilesystem | tail -1 | awk '{printf "%.1f%s/%.1f%s (%.0f%%)", $3, $4, $2, $4, $5}' | sed 's/%//'
             result = subprocess.run(['df', '-h', '/srv/serverFilesystem'], 
                                   capture_output=True, text=True, timeout=5)
             if result.returncode == 0:
                 lines = result.stdout.strip().split('\n')
                 if len(lines) >= 2:
                     parts = lines[1].split()
-                    return {
-                        'total': parts[1],
-                        'used': parts[2],
-                        'available': parts[3],
-                        'percent': parts[4]
-                    }
+                    if len(parts) >= 5:
+                        # Extract values and units
+                        used_val = float(parts[2].rstrip('GMTK'))
+                        total_val = float(parts[1].rstrip('GMTK'))
+                        unit = parts[1].lstrip('0123456789.')
+                        percent = parts[4].rstrip('%')
+                        
+                        # Format like MOTD: used_unit/total_unit (percentage%)
+                        return f"{used_val:.1f}{unit}/{total_val:.1f}{unit} ({percent}%)"
         except:
             pass
         
-        return {'total': 'Unknown', 'used': 'Unknown', 'available': 'Unknown', 'percent': '0%'}
-    
+        return 'Unknown'
     def get_dashboard_data(self):
         """Get all dashboard data"""
         server_ip = self.get_internal_ip()  # Get fresh IP each time

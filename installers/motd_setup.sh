@@ -165,12 +165,12 @@ generate_motd() {
     uptime_info=$(uptime -p 2>/dev/null || echo "Unknown")
     load_avg=$(uptime | awk -F'load average:' '{ print $2 }' | sed 's/,//g' | awk '{print $1}' 2>/dev/null || echo "Unknown")
     memory_info=$(free -h | grep '^Mem:' | awk '{printf "%.1fGB/%.1fGB (%.0f%%)", $3, $2, $3/$2*100}' 2>/dev/null || echo "Unknown")
-    disk_info=$(df -h /srv/serverFilesystem 2>/dev/null | tail -1 | awk '{print $5}' 2>/dev/null || echo "Unknown")
+    disk_info=$(df -h /srv/serverFilesystem 2>/dev/null | tail -1 | awk '{printf "%.1f%s/%.1f%s (%.0f%%)", $3, $4, $2, $4, $5}' 2>/dev/null | sed 's/%//' || echo "Unknown")
     
     echo -e "  ⏰ ${WHITE}Uptime:${NC}         $uptime_info"
     echo -e "  📊 ${WHITE}Load Average:${NC}  $load_avg"
-    echo -e "  🧠 ${WHITE}Memory Usage:${NC}  $memory_info"
-    echo -e "  💾 ${WHITE}Disk Usage:${NC}    $disk_info (/srv/serverFilesystem)"
+    echo -e "  🧠 ${WHITE}Memory (RAM):${NC}  $memory_info"
+    echo -e "  💾 ${WHITE}Drive Space:${NC}    $disk_info (/srv/serverFilesystem)"
     
     echo ""
     echo -e "${YELLOW}${BOLD}Configuration Resources:${NC}"
