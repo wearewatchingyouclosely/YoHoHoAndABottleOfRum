@@ -138,6 +138,7 @@ SERVICES[8]="qbittorrent"
 SERVICES[9]="unpackerr"
 SERVICES[10]="prometheus"
 SERVICES[11]="dashboard"
+SERVICES[M]="motd_update"
 SERVICES[G]="gui"
 
 SERVICE_DESCRIPTIONS[1]="📁 Samba File Share"
@@ -151,6 +152,7 @@ SERVICE_DESCRIPTIONS[8]="🌊 qBittorrent (Torrents)"
 SERVICE_DESCRIPTIONS[9]="📦 Unpackerr (Archives)"
 SERVICE_DESCRIPTIONS[10]="📊 Prometheus (Monitoring)"
 SERVICE_DESCRIPTIONS[11]="🎨 Web Dashboard (Mobile-Friendly)"
+SERVICE_DESCRIPTIONS[M]="🔄 MOTD Update (Refresh System Status)"
 SERVICE_DESCRIPTIONS[G]="🖥️  Desktop GUI"
 
 # Utility functions
@@ -247,14 +249,16 @@ show_service_menu() {
     echo -e "  ${WHITE}[11]${NC} ${SERVICE_DESCRIPTIONS[11]} ${GREEN}- Recommended${NC}" >&3
     echo ""
     
-    # Optional System Enhancement
+    # System Enhancement
     echo -e "${PURPLE}${BOLD}🖥️ SYSTEM ENHANCEMENT${NC}" >&3
+    echo -e "  ${WHITE}[M]${NC} ${SERVICE_DESCRIPTIONS[M]} ${PURPLE}- Optional${NC}" >&3
     echo -e "  ${WHITE}[G]${NC} ${SERVICE_DESCRIPTIONS[G]} ${PURPLE}- FUTURE${NC}" >&3
     echo ""
     
     # Shortcuts
     echo -e "${CYAN}${BOLD}⚡ QUICK SHORTCUTS${NC}" >&3
     echo -e "  ${BOLD}${YELLOW}[A]${NC}   Install ALL recommended services (1-11)" >&3
+    echo -e "  ${BOLD}${YELLOW}[AM]${NC}  Install ALL + MOTD update (1-11 + M)" >&3
     echo -e "  ${BOLD}${YELLOW}[AG]${NC}  Install ALL services + GUI (1-11 + G)" >&3
     echo ""
     
@@ -263,6 +267,7 @@ show_service_menu() {
     echo -e "  ${WHITE}Multiple:${NC}   3 10 11              ${GRAY}(Radarr + Prometheus + Dashboard)${NC}" >&3
     echo -e "  ${WHITE}Comma:${NC}      1,2,6                ${GRAY}(Samba + NordVPN + Plex)${NC}" >&3
     echo -e "  ${WHITE}All:${NC}        A                    ${GRAY}(Everything recommended)${NC}" >&3
+    echo -e "  ${WHITE}All+MOTD:${NC}   AM                   ${GRAY}(Everything + MOTD refresh)${NC}" >&3
     echo ""
     
     echo -e "${WHITE}${BOLD}💫 Enter your selection${NC}: " >&3
@@ -276,6 +281,9 @@ parse_selection() {
     case "${input^^}" in
         "A")
             selections=(1 2 3 4 5 6 7 8 9 10 11)
+            ;;
+        "AM")
+            selections=(1 2 3 4 5 6 7 8 9 10 11 M)
             ;;
         "AG")
             selections=(1 2 3 4 5 6 7 8 9 10 11 G)
@@ -748,11 +756,42 @@ install_dashboard() {
 
         # Run the installer as root to ensure proper permissions/systemd access
         echo -e "${YELLOW}  → Running dashboard installer${NC}" >&3
-        sudo bash "$INSTALLERS_DIR/dashboard_install.sh"
+        if sudo bash "$INSTALLERS_DIR/dashboard_install.sh"; then
+            INSTALL_RESULTS[dashboard]="success"
+            log "Dashboard installation completed successfully"
+        else
+            INSTALL_RESULTS[dashboard]="failed"
+            INSTALL_ERRORS[dashboard]="Installation script failed"
+            echo -e "${RED}❌ Dashboard installation failed${NC}" >&3
+            log "Dashboard installation failed"
+        fi
     else
         INSTALL_RESULTS[dashboard]="missing"
         INSTALL_ERRORS[dashboard]="Installer script not found"
         echo -e "${YELLOW}⚠️ dashboard_install.sh not found - service not installed${NC}" >&3
+    fi
+}
+
+install_motd_update() {
+    log "Updating MOTD system"
+    echo -e "${CYAN}🔄 Updating MOTD system...${NC}" >&3
+    
+    if [[ -f "$INSTALLERS_DIR/motd_setup.sh" ]]; then
+        chmod +x "$INSTALLERS_DIR/motd_setup.sh"
+        if "$INSTALLERS_DIR/motd_setup.sh"; then
+            INSTALL_RESULTS[motd_update]="success"
+            log "MOTD update completed successfully"
+            echo -e "${GREEN}✅ MOTD system updated successfully${NC}" >&3
+        else
+            INSTALL_RESULTS[motd_update]="failed"
+            INSTALL_ERRORS[motd_update]="MOTD update script failed"
+            echo -e "${RED}❌ MOTD update failed${NC}" >&3
+            log "MOTD update failed but continuing"
+        fi
+    else
+        INSTALL_RESULTS[motd_update]="missing"
+        INSTALL_ERRORS[motd_update]="MOTD setup script not found"
+        echo -e "${YELLOW}⚠️ motd_setup.sh not found - MOTD not updated${NC}" >&3
     fi
 }
 
@@ -1076,12 +1115,19 @@ show_service_status() {
         echo -e "  ${GREEN}●${NC} ${WHITE}qBittorrent:${NC}         http://$server_ip:8080 ${GREEN}[READY]${NC}" >&3
     fi
 
+    # Dashboard is always installed
+    echo -e "  ${GREEN}●${NC} ${WHITE}Web Dashboard:${NC}       http://$server_ip:3000 ${GREEN}[READY]${NC}" >&3
+
     if [[ "${INSTALL_FLAGS[nordvpn]}" == "true" ]]; then
         echo -e "  ${BLUE}●${NC} ${WHITE}NordVPN:${NC}             ${YELLOW}Token login required${NC}" >&3
     fi
 
     if [[ "${INSTALL_FLAGS[unpackerr]}" == "true" ]]; then
         echo -e "  ${BLUE}●${NC} ${WHITE}Unpackerr:${NC}           ${YELLOW}Background service - runs automatically${NC}" >&3
+    fi
+
+    if [[ "${INSTALL_FLAGS[motd_update]}" == "true" ]]; then
+        echo -e "  ${GREEN}●${NC} ${WHITE}MOTD Update:${NC}         ${GREEN}System status refreshed${NC}" >&3
     fi
 
     if [[ "${INSTALL_FLAGS[gui]}" == "true" ]]; then
@@ -1225,6 +1271,9 @@ main() {
         exit 1
     fi
     
+    # Dashboard is always installed (like MOTD)
+    INSTALL_FLAGS[dashboard]="true"
+    
     echo ""
     print_fancy_box "🚀 STARTING INSTALLATION PROCESS" "${PURPLE}"
     echo ""
@@ -1258,7 +1307,9 @@ main() {
     [[ "${INSTALL_FLAGS[overseerr]}" == "true" ]] && install_overseerr
     [[ "${INSTALL_FLAGS[unpackerr]}" == "true" ]] && install_unpackerr
     [[ "${INSTALL_FLAGS[prometheus]}" == "true" ]] && install_prometheus
-    [[ "${INSTALL_FLAGS[dashboard]}" == "true" ]] && install_dashboard
+    # Dashboard is always installed (like MOTD)
+    install_dashboard
+    [[ "${INSTALL_FLAGS[motd_update]}" == "true" ]] && install_motd_update
     [[ "${INSTALL_FLAGS[gui]}" == "true" ]] && install_gui
     
     # qBittorrent installed last as per best practices
