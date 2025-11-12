@@ -18,7 +18,7 @@ it's clearly not a m@n!f3st0 it's just a bash script!!!!!!!
 
 ## Quick Start Guide
 
-### Step 1: Install Ubuntu Server or Debian
+### Step 1: Install Ubuntu Server
 1. Download Ubuntu Server 22.04 LTS (or desktop if you're scared and have a nice system to run this on) from [ubuntu.com](https://ubuntu.com/download/server). Debian support is planned for the future, but currently only Ubuntu is supported.
 2. Create bootable USB drive (usbimager.exe)
 3. Install Ubuntu Server on your target machine - you will likely need to plug your system into a monitor while you do this. If you bought a cheap-o server it may not have onboard Wi-Fi and you'll need to get creative with a Wi-Fi USB dongle or something similar. A certain integrator has some TP-Link wireless bridges that work well for this. Hopefully someone you know loves you enough to help you with this.
