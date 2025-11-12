@@ -80,14 +80,25 @@ hostname -I
 ### Step 4: SSH Access (Recommended)
 Once network is established, you can use SSH from another computer for easier management:
 
-**Windows:** Use [Terminus](https://eugeny.github.io/terminus/) - Download from GitHub releases or Microsoft Store  
-**Mac/Linux:** Use built-in terminal ([SSH setup guide for macOS](https://support.apple.com/guide/terminal/open-or-quit-terminal-apd5265185d-f365-11e8-860c-e22b9bd85c73/mac))  (no seriously, Mac can do this out of the box.)
+**Windows/Mac:** Use [Terminus](https://termius.com/index.html)
 
 **Terminal Copy/Paste Tips:**
 - **Copy:** Right-click selected text or Ctrl+Shift+C
 - **Paste:** Right-click in terminal or Ctrl+Shift+V  
 - **Select text:** Click and drag with mouse (just like any other app)
 - Regular Ctrl+C/V won't work - you need the Shift key!
+
+**⚠️ STUPID PROBLEM WITH TERMINAL ⚠️**
+
+**DO NOT PRESS Ctrl+C DURING INSTALLATION!**
+
+Pressing Ctrl+C and ending it can be problematic if you're in the middle of something important (like the qbitorrent setup)
+
+**Signs the script is working:**
+- Downloading packages/images
+- "Setting up..." messages
+- Docker container creation logs
+- Service startup messages
 
 ```bash
 ssh username@YOUR_SERVER_IP

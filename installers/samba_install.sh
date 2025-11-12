@@ -159,5 +159,6 @@ echo -e "${BLUE}   • User Access: ${WHITE}Available for user '$ORIG_USER'${NC}
 echo ""
 echo -e "${CYAN}💡 Usage Tips:${NC}"
 echo -e "${WHITE}   • Windows: Open File Explorer, type \\\\\\\\${SERVER_IP}\\\\sambashare in address bar${NC}"
+echo -e "${YELLOW}     ⚠️  Windows users: Enable SMB feature in Windows Features (search 'Turn Windows features on or off')${NC}"
 echo -e "${WHITE}   • macOS: Finder → Go → Connect to Server → smb://${SERVER_IP}/sambashare${NC}"
 echo -e "${WHITE}   • Linux: Files → Other Locations → smb://${SERVER_IP}/sambashare${NC}"
