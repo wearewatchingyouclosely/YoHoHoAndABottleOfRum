@@ -153,7 +153,7 @@ Access your services at:
 
 Long story short, set up Prowlarr with your 'indexer' (look it up), connect radarr and sonarr to prowlarr, then connect them to qbittorrent. everything is in /srv/serverFilesystem - /downloads will be categorized by service to keep folders clean. then -arr services softlink the files and organize in /media, it doesn't duplicate files like it may seem at first. unpackerr unzips for you but doesn't have gui to manage, you need to check logs if you notice failures. otherwise, unzip manually in /downloads then mannually set the missing file in the respective -arr app.
 
-once you have files downloaded, you can set up plex to go through /media and set up streaming your downloads. connect overseer to your plex to makee requests, but set up quality profiles so things can happen somewhat automagically without grabbing massive HD versions of media (this is biggest pain in ass to get working right of the whole thing, i am pretty happy with 6 tb of storage - check your local area for electronics recycling places)
+once you have files downloaded, you can set up plex to go through /media and set up streaming your downloads. connect overseer to your plex to makee requests, but set up quality profiles so things can happen somewhat automagically without grabbing massive HD versions of media (this is biggest pain in ass to get working right of the whole thing, i am pretty happy with 8 tb of  across 3 drives in LVM - check your local area for electronics recycling places)
 ---
   
 
