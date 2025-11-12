@@ -106,7 +106,7 @@ sudo apt install git -y
 # Navigate to the directory
 cd YoHoHoAndABottleOfRum
 
-# Run the installer
+# Run the installer - pay attention! You will need to provide input as the script progresses
 sudo bash server_setup.sh
 ```
 

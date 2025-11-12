@@ -98,6 +98,23 @@ sleep 3
 if systemctl is-active --quiet snap.overseerr.overseerr; then
     SERVER_IP=$(get_internal_ip)
     
+    # Health check: poll local web interface to ensure Overseerr is responding
+    echo -e "${YELLOW}  → Waiting for Overseerr web interface to respond...${NC}"
+    ok=false
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+        if curl -sS --fail --max-time 5 http://127.0.0.1:5055 >/dev/null 2>&1; then
+            ok=true; break
+        fi
+        sleep 2
+    done
+    
+    if [ "$ok" != "true" ]; then
+        echo -e "${RED}❌ Overseerr service started but web interface is not responding${NC}"
+        echo -e "${YELLOW}  Checking service logs...${NC}"
+        sudo systemctl status snap.overseerr.overseerr --no-pager -l
+        exit 1
+    fi
+    
     echo ""
     echo -e "${GREEN}✅ Overseerr installation completed successfully!${NC}"
     echo -e "${WHITE}═══════════════════════════════════════${NC}"

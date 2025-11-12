@@ -163,9 +163,9 @@ print_header() {
     echo -e "${PURPLE}${BOLD}" >&3
     echo "╔══════════════════════════════════════════════════════════════════════════════╗" >&3
     echo "║                      🚀 MEDIA SERVER INSTALLER 🚀                           ║" >&3
-    echo "║                    Based on A Bunch of Garbage and BS                       ║" >&3
-    echo "║                         Professional Edition v1.1                           ║" >&3
-    echo "║                     🐧 Ubuntu & Debian Compatible 🐧                        ║" >&3
+    echo "║                    Based on A Bunch of Garbage and BS                        ║" >&3
+    echo "║                         Professional Edition v1.1                            ║" >&3
+    echo "║                                                                              ║" >&3
     echo "╚══════════════════════════════════════════════════════════════════════════════╝" >&3
     echo -e "${NC}" >&3
     echo ""
@@ -637,7 +637,7 @@ install_plex() {
 
 install_overseerr() {
     log "Installing Overseerr request manager"
-    if systemctl is-active --quiet overseerr 2>/dev/null; then
+    if systemctl is-active --quiet snap.overseerr.overseerr 2>/dev/null; then
         INSTALL_RESULTS[overseerr]="skipped"
         INSTALL_ERRORS[overseerr]="Already installed and running"
         echo -e "${YELLOW}⚠️ Overseerr already installed - skipping${NC}" >&3
