@@ -328,43 +328,43 @@ class ServerDashboard:
             'radarr': {
                 'name': 'Radarr (Movies)',
                 'icon': '🎬',
-                'url': f'http://{server_ip}:7878',
+                'url': f'{server_ip}:7878',
                 'status': self.check_service_status(f'http://{server_ip}:7878')
             },
             'sonarr': {
                 'name': 'Sonarr (TV Shows)', 
                 'icon': '📺',
-                'url': f'http://{server_ip}:8989',
+                'url': f'{server_ip}:8989',
                 'status': self.check_service_status(f'http://{server_ip}:8989')
             },
             'prowlarr': {
                 'name': 'Prowlarr (Indexers)',
                 'icon': '🔍', 
-                'url': f'http://{server_ip}:9696',
+                'url': f'{server_ip}:9696',
                 'status': self.check_service_status(f'http://{server_ip}:9696')
             },
             'plex': {
                 'name': 'Plex Media Server',
                 'icon': '🎭',
-                'url': f'http://{server_ip}:32400/web',
+                'url': f'{server_ip}:32400/web',
                 'status': self.check_service_status(f'http://{server_ip}:32400/web')
             },
             'overseerr': {
                 'name': 'Overseerr (Requests)',
                 'icon': '📋',
-                'url': f'http://{server_ip}:5055',
+                'url': f'{server_ip}:5055',
                 'status': self.check_service_status(f'http://{server_ip}:5055')
             },
             'qbittorrent': {
                 'name': 'qBittorrent',
                 'icon': '🌊',
-                'url': f'http://{server_ip}:8080',
+                'url': f'{server_ip}:8080',
                 'status': self.check_service_status(f'http://{server_ip}:8080')
             },
             'prometheus': {
                 'name': 'Prometheus (Monitoring)',
                 'icon': '📊',
-                'url': f'http://{server_ip}:9090',
+                'url': f'{server_ip}:9090',
                 'status': self.check_service_status(f'http://{server_ip}:9090')
             }
         }
