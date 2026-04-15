@@ -689,8 +689,9 @@
 
         function normalizeOpenUrl(url) {
             if (!url) return '';
-            if (/^(https?:\/\/|file:\/\/|smb:\/\/|\/\/)/i.test(url)) return url;
-            return `//${url}`;
+            if (/^(https?:\/\/|file:\/\/|smb:\/\/)/i.test(url)) return url;
+            if (/^\/\//.test(url)) return `http:${url}`;
+            return `http://${url}`;
         }
 
         function initializeMobileCycling() {
