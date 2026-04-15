@@ -687,6 +687,12 @@
         let currentMobileIndex = 0;
         let mobileInterval = null;
 
+        function normalizeOpenUrl(url) {
+            if (!url) return '';
+            if (/^(https?:\/\/|file:\/\/|smb:\/\/|\/\/)/i.test(url)) return url;
+            return `//${url}`;
+        }
+
         function initializeMobileCycling() {
             // Check if we're in mobile view
             if (window.innerWidth > 500) return;
@@ -777,7 +783,8 @@
             const container = document.getElementById('mobile-current-service');
             container.onclick = () => {
                 if (service.type === 'media' && service.status === 'online') {
-                    window.open(service.url, '_blank');
+                    const targetUrl = normalizeOpenUrl(service.url);
+                    if (targetUrl) window.open(targetUrl, '_blank');
                 } else if (service.type === 'system' && service.name === 'Samba File Share' && service.status === 'running') {
                     // Handle Samba click (same logic as desktop)
                     const smbPath = service.smbPath;
@@ -868,7 +875,10 @@
                     if (key === 'unpackerr') return; // Unpackerr is a system service, not media
                     const serviceElement = document.createElement('div');
                     serviceElement.className = 'service';
-                    serviceElement.onclick = () => window.open(service.url, '_blank');
+                        serviceElement.onclick = () => {
+                            const targetUrl = normalizeOpenUrl(service.url);
+                            if (targetUrl) window.open(targetUrl, '_blank');
+                        };
                     serviceElement.innerHTML = `
                         <div class="service-info">
                             <div class="service-icon">${service.icon}</div>
