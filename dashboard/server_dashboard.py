@@ -297,9 +297,9 @@ class ServerDashboard:
             }
     
     def get_disk_usage(self):
-        """Get disk usage for main filesystem - matching MOTD calculation with units"""
+        """Get disk usage for main filesystem in used/total (percent) format"""
         try:
-            # Match MOTD: df -h /srv/serverFilesystem | tail -1 | awk '{printf "%.1f%s/%.1f%s (%.0f%%)", $3, $4, $2, $4, $5}' | sed 's/%//'
+            # Use raw df columns to preserve native units and avoid parsing errors.
             result = subprocess.run(['df', '-h', '/srv/serverFilesystem'], 
                                   capture_output=True, text=True, timeout=5)
             if result.returncode == 0:
@@ -307,14 +307,10 @@ class ServerDashboard:
                 if len(lines) >= 2:
                     parts = lines[1].split()
                     if len(parts) >= 5:
-                        # Extract values and units
-                        used_val = float(parts[2].rstrip('GMTK'))
-                        total_val = float(parts[1].rstrip('GMTK'))
-                        unit = parts[1].lstrip('0123456789.')
-                        percent = parts[4].rstrip('%')
-                        
-                        # Format like MOTD: used_unit/total_unit (percentage%)
-                        return f"{used_val:.1f}{unit}/{total_val:.1f}{unit} ({percent}%)"
+                        used = parts[2]
+                        total = parts[1]
+                        percent = parts[4]
+                        return f"{used}/{total} ({percent})"
         except:
             pass
         
