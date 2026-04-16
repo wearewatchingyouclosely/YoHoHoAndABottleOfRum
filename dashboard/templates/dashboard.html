@@ -687,16 +687,16 @@
         let currentMobileIndex = 0;
         let mobileInterval = null;
 
-        function normalizeOpenUrl(url) {
-            if (!url) return '';
-            if (/^(https?:\/\/|file:\/\/|smb:\/\/)/i.test(url)) return url;
-            if (/^\/\//.test(url)) return `http:${url}`;
-            return `http://${url}`;
-        }
-
         function openServiceUrl(url) {
-            const targetUrl = normalizeOpenUrl(url);
+            if (!url) return;
+            let targetUrl = String(url).trim();
             if (!targetUrl) return;
+
+            // Service URLs should be explicit http://; keep one fallback for legacy values.
+            if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(targetUrl)) {
+                targetUrl = `http://${targetUrl.replace(/^\/\//, '')}`;
+            }
+
             // Some apps enforce strict origin/referer checks and reject cross-app navigations.
             const newWindow = window.open(targetUrl, '_blank', 'noopener,noreferrer');
             if (newWindow) newWindow.opener = null;
