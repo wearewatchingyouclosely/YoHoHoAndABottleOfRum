@@ -694,6 +694,14 @@
             return `http://${url}`;
         }
 
+        function openServiceUrl(url) {
+            const targetUrl = normalizeOpenUrl(url);
+            if (!targetUrl) return;
+            // Some apps enforce strict origin/referer checks and reject cross-app navigations.
+            const newWindow = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+            if (newWindow) newWindow.opener = null;
+        }
+
         function initializeMobileCycling() {
             // Check if we're in mobile view
             if (window.innerWidth > 500) return;
@@ -784,8 +792,7 @@
             const container = document.getElementById('mobile-current-service');
             container.onclick = () => {
                 if (service.type === 'media' && service.status === 'online') {
-                    const targetUrl = normalizeOpenUrl(service.url);
-                    if (targetUrl) window.open(targetUrl, '_blank');
+                    openServiceUrl(service.url);
                 } else if (service.type === 'system' && service.name === 'Samba File Share' && service.status === 'running') {
                     // Handle Samba click (same logic as desktop)
                     const smbPath = service.smbPath;
@@ -876,10 +883,7 @@
                     if (key === 'unpackerr') return; // Unpackerr is a system service, not media
                     const serviceElement = document.createElement('div');
                     serviceElement.className = 'service';
-                        serviceElement.onclick = () => {
-                            const targetUrl = normalizeOpenUrl(service.url);
-                            if (targetUrl) window.open(targetUrl, '_blank');
-                        };
+                        serviceElement.onclick = () => openServiceUrl(service.url);
                     serviceElement.innerHTML = `
                         <div class="service-info">
                             <div class="service-icon">${service.icon}</div>
